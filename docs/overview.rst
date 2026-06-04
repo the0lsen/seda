@@ -226,3 +226,38 @@ Parameter coverage:
   - logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
   - fsed = 1, 2, 3, 4
   - R = [100000, 700000] (the resolving power varies with wavelength)
+
+.. _evolutionary_models:
+
+Available Evolutionary Models
+-----------------------------
+
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`.
+
+Sonora Bobcat Evolutionary Tables
++++++++++++++++++++++++++++++++++
+
+Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Download the tables from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive). Evolution sequences are provided for [M/H] = -0.5, 0.0, and 0.5 at solar C/O (C/O = 1.0); non-solar C/O grids are available for the atmospheric spectra but not for the evolution tables.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
+  - age = [0.001, 15] Gyr
+  - Lbol = [6.1e-10, 2.2e-3] Lsun (log L/Lsun = [-9.21, -2.66])
+  - R = [0.75, 2.59] Rjup
+  - logg = [2.65, 5.48] (g in cgs)
+  - Teff = [91, 2537] K
+  - [M/H] = -0.5, 0.0, and 0.5
+  - C/O = 1.0 (solar)
+
+Each [M/H] set includes a ``*_mass`` table in an ``evo_tables±[M/H]/`` folder (seven columns per data row: M/Msun, age(Gyr), log L/Lsun, Teff(K), log g, R/Rsun, log I; the log I column is not used by SEDA):
+
+.. code-block:: console
+
+  - ``nc-0.5_co1.0_mass``  ([M/H] = -0.5)
+  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
+  - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
+
+:func:`~seda.phy_params.evol_params` reads these ``*_mass`` tables (constant-mass cooling tracks). A solar example (``nc+0.0_co1.0_mass``) is bundled with :math:`\texttt{SEDA}` for testing; download the desired [M/H] table and pass its path to :func:`~seda.phy_params.evol_params`.
