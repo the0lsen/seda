@@ -451,7 +451,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	return Teff_val, Teff_err
 
 ##########################
-def evol_params(Lbol, eLbol, R, eR, evolutionary_model, 
+def evol_params(Lbol, eLbol, R, eR, evolutionary_model, model="Sonora_Bobcat",
                 n_mc=10000, central="median", error="percentile", 
                 percentiles=(16, 84), verbose=True):
 	'''
@@ -477,6 +477,9 @@ def evol_params(Lbol, eLbol, R, eR, evolutionary_model,
 		Path to a Sonora Bobcat ``*_mass`` evolutionary table file. The expected file
 		format is one header line followed by seven-column data rows:
 		``M/Msun age(Gyr) logL/Lsun Teff(K) logg R/Rsun logI``.
+	- model : str, optional (default "Sonora_Bobcat")
+		Evolutionary models whose tables are used. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
@@ -504,7 +507,7 @@ def evol_params(Lbol, eLbol, R, eR, evolutionary_model,
 	--------
 	>>> import seda
 	>>>
-	>>> # derived quantities from a SEDA fit
+	>>> # input bolometric luminosity and radius with errors
 	>>> Lbol, eLbol = 6.324e-5, 6.978e-6  # in Lsun
 	>>> R, eR = 1.018, 0.059              # in Rjup
 	>>>
@@ -514,7 +517,8 @@ def evol_params(Lbol, eLbol, R, eR, evolutionary_model,
 	    (41.84, 0.51)  
 
 	Author: Theo Olsen
-	date: 2026-06-02
+
+	Date: 2026-06-02
 	'''
 
 	# verify that "central" and "error" are valid strings
@@ -533,16 +537,8 @@ def evol_params(Lbol, eLbol, R, eR, evolutionary_model,
 
 
 
-	# All Bobcat "_mass" tables share the same format; keeping only the 7-token lines selects
-	# the data rows and drops the header and count lines. (log I is not used in the interp)
-	with open(evolutionary_model) as evo_file: # open the evolutionary model file
-		rows = [line.split() for line in evo_file] # split the file into lines
-	data = np.array([row for row in rows if len(row) == 7], dtype=float) # select the data rows
-	if data.size == 0: # if no data rows were found
-		raise ValueError(f'No seven-column data rows were found in "{evolutionary_model}". ' 
-		                 f'Pass a Sonora Bobcat *_mass evolutionary table.')
-	grid = {'mass': data[:, 0], 'age': data[:, 1], 'logL': data[:, 2],
-	        'Teff': data[:, 3], 'logg': data[:, 4], 'radius': data[:, 5]} # create a dictionary with the data, the logI column is ignored.')
+	# read the evolutionary grid through the evolutionary models reader 
+	grid = models.read_evolutionary_model(filename=evolutionary_model, model=model)
 
 	# evolutionary grid arrays
 	grid_mass = np.asarray(grid['mass'], dtype=float)  # M_sun

@@ -176,6 +176,95 @@ class Models:
 		return attrs
 
 ##########################
+class EvolutionaryModels:
+	'''
+	Description:
+	------------
+		See available evolutionary models and get basic parameters from a desired grid.
+
+	Parameters:
+	-----------
+	- model : str, optional
+		Evolutionary models. If provided, the model metadata from its ``config.json``
+		(e.g. ``ref``, ``bibcode``, ``ADS``, ``download``, ``columns``, ``units``) is
+		assigned as attributes. If omitted, only ``available_models`` is set.
+
+	Attributes:
+	-----------
+	- available_models (list) : Evolutionary models available on SEDA.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # see available evolutionary models
+	>>> seda.models.EvolutionaryModels().available_models
+	    ['Sonora_Bobcat']
+	>>>
+	>>> # see the reference for a given evolutionary model
+	>>> seda.models.EvolutionaryModels('Sonora_Bobcat').ref
+	    'Marley et al. (2021)'
+
+	Author: Theo Olsen
+
+	Date: 2026-06-04
+	'''
+#basically the same as Models class, but for evolutionary models
+	def __init__(self, model=None):
+
+		# path to evolutionary model folders
+		self.path_evolution_aux = resources.files('seda.evolution_aux')
+
+		# read info from json files
+		model_configs = self._load_model_configs()
+
+		# set available evolutionary models
+		self.available_models = list(model_configs.keys())
+
+		# if a specific model is requested
+		if model:
+			if model not in model_configs:
+				raise Exception(f'Evolutionary models "{model}" are not recognized. '
+				                f'Available evolutionary models: \n          {self.available_models}')
+
+			config = model_configs[model]
+
+			# assign all non-comment fields as attributes
+			for key, value in config.items():
+				if not key.startswith('_comment'):
+					setattr(self, key, value)
+
+	def _load_model_configs(self):
+		"""
+		Scan evolutionary model folders, ensure config + plugin exist,
+		and return a dict with config keyed by available models.
+		"""
+
+		model_configs = {}
+
+		# loop over evolutionary model directories
+		for model_dir in self.path_evolution_aux.iterdir():
+			# skip non-directories and internal folders
+			if not model_dir.is_dir() or model_dir.name.startswith('_'):
+				continue
+
+			config_path = model_dir / 'config.json'
+			plugin_path = model_dir / 'plugin.py'
+
+			# require both config and plugin files
+			if not config_path.exists() or not plugin_path.exists():
+				continue
+
+			# read model name from config
+			with open(config_path) as f:
+				config = json.load(f)
+
+			model_name = config['model']
+			model_configs[model_name] = config
+
+		return model_configs
+
+##########################
 def separate_params(model, spectra_name, save_results=False, out_file=None):
 	'''
 	Description:
@@ -387,6 +476,60 @@ def read_PT_profile(filename, model):
 	return out
 
 ##########################
+def read_evolutionary_model(filename, model):
+	'''
+	Description:
+	------------
+		Read an evolutionary model table and return its grid arrays.
+
+	Parameters:
+	-----------
+	- filename : str
+		Evolutionary table file name with full path.
+	- model : str
+		Evolutionary models. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+
+	Returns:
+	--------
+	Dictionary with the evolutionary grid:
+		- ``'mass'`` : mass in M_sun
+		- ``'age'`` : age in Gyr
+		- ``'logL'`` : logarithmic bolometric luminosity, log10(L/Lsun)
+		- ``'Teff'`` : effective temperature in K
+		- ``'logg'`` : surface gravity (cgs dex)
+		- ``'radius'`` : radius in R_sun
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # desired models and evolutionary table file
+	>>> model = 'Sonora_Bobcat'
+	>>> filename = 'my_path/evolution_tables/evo_tables+0.0/nc+0.0_co1.0_mass' # change my_path accordingly
+	>>>
+	>>> # read evolutionary table
+	>>> out = seda.read_evolutionary_model(filename=filename, model=model)
+	>>> mass = out['mass'] # mass in M_sun
+	>>> age = out['age'] # age in Gyr
+
+	Author: Theo Olsen
+
+	Date: 2026-06-04
+	'''
+	#same basic logic as read_PT_profile function, but for evolutionary models
+	# verify the input model is available
+	if model not in EvolutionaryModels().available_models:
+		raise Exception(f'Evolutionary models "{model}" are not recognized. '
+		                f'Available evolutionary models: \n          {EvolutionaryModels().available_models}')
+
+	# load the evolutionary plugin and read the table
+	_, plugin = _load_evolutionary_model(model)
+	out = plugin._read_evolutionary_model(filename)
+
+	return out
+
+##########################
 # short name for plot legends for model spectra
 def spectra_name_short(model, spectra_name):
 
@@ -452,6 +595,53 @@ def _load_model(model):
 
 	# cache and return
 	_PLUGIN_CACHE[model] = (config, plugin)
+	return config, plugin
+
+##########################
+_EVOL_BASE_PATH = Path(__file__).parent / 'evolution_aux'
+_EVOL_PLUGIN_CACHE = {}
+
+def _load_evolutionary_model(model):
+
+	# return cached model if already loaded
+	if model in _EVOL_PLUGIN_CACHE:
+		return _EVOL_PLUGIN_CACHE[model]
+
+	# define model folder and load JSON config
+	model_dir = _EVOL_BASE_PATH / model
+	config_path = model_dir / 'config.json'
+
+	# verify the json file exists
+	if not config_path.exists():
+		raise FileNotFoundError(f"No config.json for evolutionary model '{model}'")
+
+	with open(config_path) as f:
+		config = json.load(f)
+
+	# load plugin.py dynamically as a module
+	plugin_path = model_dir / 'plugin.py'
+	# verify that plugin.py exists
+	if not plugin_path.exists():
+		raise NotImplementedError(
+			f"Evolutionary model '{model}' has no plugin.py"
+		)
+
+	# create a module spec for the plugin file
+	spec = importlib.util.spec_from_file_location(f'{model}_evolution', plugin_path)
+	# create a module object from that spec
+	plugin = importlib.util.module_from_spec(spec)
+	# execute the module code to load it into Python
+	spec.loader.exec_module(plugin)
+
+	# validate required functions
+	for func in ['_read_evolutionary_model']:
+		if not hasattr(plugin, func):
+			raise AttributeError(
+				f"{model}/plugin.py (evolution_aux) must define '{func}'"
+			)
+
+	# cache and return
+	_EVOL_PLUGIN_CACHE[model] = (config, plugin)
 	return config, plugin
 
 #+++++++++++++++++++++++++++

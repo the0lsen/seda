@@ -10,13 +10,12 @@ import seda
 # ----------------------------
 # Test data
 # ----------------------------
-# A toy grid whose (logL, R) -> (mass, age) mapping is bijective (linear with a
-# non-singular Jacobian), so interpolation recovers the node values exactly.
+# A toy grid whose (logL, R) -> (mass, age) interpolation recovers the node values exactly.
 MASS_MSUN = np.array([0.01, 0.02, 0.03, 0.04, 0.05])  # M_sun
 AGE_GYR = np.array([0.1, 0.5, 1.0, 5.0, 10.0])        # Gyr
 
 BOBCAT_MASS_FILE = str(
-	Path(resources.files("seda.models_aux")) / "Sonora_Bobcat_evolution" / "nc+0.0_co1.0_mass"
+	Path(resources.files("seda.evolution_aux")) / "Sonora_Bobcat" / "nc+0.0_co1.0_mass"
 )
 
 # ----------------------------
