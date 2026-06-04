@@ -63,7 +63,7 @@ Useful Tools
   - :func:`~seda.synthetic_photometry.synthetic_photometry.mag_to_flux`: Converts magnitudes into fluxes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :func:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: Converts fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :func:`~seda.utils.spt_to_teff`: Estimates effective temperatures from spectral types using relationships in the literature.
-  - :func:`~seda.utils.teff_to_teff`: Estimates spectral type from effective temperature, using numerical inversion of :func:`~seda.utils.spt_to_teff`.
+  - :func:`~seda.utils.teff_to_spt`: Estimates spectral type from effective temperature, using numerical inversion of :func:`~seda.utils.spt_to_teff`.
   - :func:`~seda.utils.app_to_abs_flux`: Converts apparent fluxes into absolute fluxes considering a distance.
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
   - :func:`~seda.utils.separate_params`: Extracts parameters from model spectra file names.
@@ -237,7 +237,7 @@ Available Evolutionary Models
 Sonora Bobcat Evolutionary Tables
 +++++++++++++++++++++++++++++++++
 
-Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Download the tables from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive). Evolution sequences are provided for [M/H] = -0.5, 0.0, and 0.5 at solar C/O (C/O = 1.0); non-solar C/O grids are available for the atmospheric spectra but not for the evolution tables.
+Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Download the tables from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive). Evolution sequences are provided for [M/H] = -0.5, 0.0, and 0.5 at solar C/O.
 
 Parameter coverage:
 
@@ -252,12 +252,11 @@ Parameter coverage:
   - [M/H] = -0.5, 0.0, and 0.5
   - C/O = 1.0 (solar)
 
-Each [M/H] set includes a ``*_mass`` table in an ``evo_tables±[M/H]/`` folder (seven columns per data row: M/Msun, age(Gyr), log L/Lsun, Teff(K), log g, R/Rsun, log I; the log I column is not used by SEDA):
-
+Available tables:
 .. code-block:: console
 
   - ``nc-0.5_co1.0_mass``  ([M/H] = -0.5)
   - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
   - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
 
-:func:`~seda.phy_params.evol_params` reads these ``*_mass`` tables (constant-mass cooling tracks). A solar example (``nc+0.0_co1.0_mass``) is bundled with :math:`\texttt{SEDA}` for testing; download the desired [M/H] table and pass its path to :func:`~seda.phy_params.evol_params`.
+:func:`~seda.phy_params.evol_params` reads these ``*_mass`` tables (constant-mass cooling tracks). 
