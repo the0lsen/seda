@@ -451,7 +451,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	return Teff_val, Teff_err
 
 ##########################
-def evol_params(Lbol, eLbol, R, eR, evolutionary_model, model="Sonora_Bobcat",
+def evol_params(Lbol, eLbol, R, eR, model_path, model="Sonora_Bobcat",
                 n_mc=10000, central="median", error="percentile", 
                 percentiles=(16, 84), verbose=True):
 	'''
@@ -473,7 +473,7 @@ def evol_params(Lbol, eLbol, R, eR, evolutionary_model, model="Sonora_Bobcat",
 		Radius in units of R_jup.
 	- eR : float
 		Uncertainty in radius (R_jup).
-	- evolutionary_model : str
+	- model_path : str
 		Path to a Sonora Bobcat ``*_mass`` evolutionary table file. The expected file
 		format is one header line followed by seven-column data rows:
 		``M/Msun age(Gyr) logL/Lsun Teff(K) logg R/Rsun logI``.
@@ -512,7 +512,7 @@ def evol_params(Lbol, eLbol, R, eR, evolutionary_model, model="Sonora_Bobcat",
 	>>> R, eR = 1.018, 0.059              # in Rjup
 	>>>
 	>>> # path to a Sonora Bobcat *_mass evolutionary table (downloaded by the user)
-	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR, evolutionary_model='/path/to/BobcatModel.0_mass')
+	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR, model_path='/path/to/BobcatModel.0_mass')
 	>>> out['mass'], out['age']
 	    (41.84, 0.51)  
 
@@ -538,7 +538,7 @@ def evol_params(Lbol, eLbol, R, eR, evolutionary_model, model="Sonora_Bobcat",
 
 
 	# read the evolutionary grid through the evolutionary models reader 
-	grid = models.read_evolutionary_model(filename=evolutionary_model, model=model)
+	grid = models.read_evolutionary_model(filename=model_path, model=model)
 
 	# evolutionary grid arrays
 	grid_mass = np.asarray(grid['mass'], dtype=float)  # M_sun

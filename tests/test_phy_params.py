@@ -74,7 +74,7 @@ def test_evol_params_round_trip(tmp_path):
 
 	out = seda.phy_params.evol_params(
 		Lbol=Lbol, eLbol=1e-4 * Lbol, R=R_rjup, eR=1e-4 * R_rjup,
-		evolutionary_model=path, n_mc=2000, verbose=False,
+		model_path=path, n_mc=2000, verbose=False,
 	)
 
 	assert out['mass'] == pytest.approx(mass_mjup_exp, rel=0.05), (
@@ -102,7 +102,7 @@ def test_evol_params_outside_grid_raises(tmp_path):
 	with pytest.raises(ValueError):
 		seda.phy_params.evol_params(
 			Lbol=1e10, eLbol=1e8, R=1.0, eR=1e-4,
-			evolutionary_model=path, n_mc=500, verbose=False,
+			model_path=path, n_mc=500, verbose=False,
 		)
 
 def test_evol_params_bad_mass_table_raises(tmp_path):
@@ -113,7 +113,7 @@ def test_evol_params_bad_mass_table_raises(tmp_path):
 	with pytest.raises(ValueError):
 		seda.phy_params.evol_params(
 			Lbol=1e-3, eLbol=1e-4, R=1.0, eR=0.1,
-			evolutionary_model=str(path), n_mc=100, verbose=False,
+			model_path=str(path), n_mc=100, verbose=False,
 		)
 
 def test_evol_params_std_error_mode(tmp_path):
@@ -123,7 +123,7 @@ def test_evol_params_std_error_mode(tmp_path):
 
 	out = seda.phy_params.evol_params(
 		Lbol=Lbol, eLbol=1e-4 * Lbol, R=R_rjup, eR=1e-4 * R_rjup,
-		evolutionary_model=path, error="std", n_mc=1000, verbose=False,
+		model_path=path, error="std", n_mc=1000, verbose=False,
 	)
 
 	assert np.isscalar(out["emass"]), "emass should be a scalar when error='std'"
@@ -138,7 +138,7 @@ def test_evol_params_nonpositive_lbol_raises(tmp_path):
 	with pytest.raises(ValueError):
 		seda.phy_params.evol_params(
 			Lbol=0.0, eLbol=1e-5, R=1.0, eR=0.1,
-			evolutionary_model=path, n_mc=500, verbose=False,
+			model_path=path, n_mc=500, verbose=False,
 		)
 
 def test_evol_params_reproducible_with_seed(tmp_path):
@@ -149,13 +149,13 @@ def test_evol_params_reproducible_with_seed(tmp_path):
 	np.random.seed(0)
 	out1 = seda.phy_params.evol_params(
 		Lbol=Lbol, eLbol=1e-4 * Lbol, R=R_rjup, eR=1e-4 * R_rjup,
-		evolutionary_model=path, n_mc=500, verbose=False,
+		model_path=path, n_mc=500, verbose=False,
 	)
 
 	np.random.seed(0)
 	out2 = seda.phy_params.evol_params(
 		Lbol=Lbol, eLbol=1e-4 * Lbol, R=R_rjup, eR=1e-4 * R_rjup,
-		evolutionary_model=path, n_mc=500, verbose=False,
+		model_path=path, n_mc=500, verbose=False,
 	)
 
 	assert out1["mass"] == pytest.approx(out2["mass"]), (
@@ -175,7 +175,7 @@ def test_evol_params_bobcat_file():
 
 	out = seda.phy_params.evol_params(
 		Lbol=Lbol, eLbol=eLbol, R=R, eR=eR,
-		evolutionary_model=BOBCAT_MASS_FILE, verbose=True,
+		model_path=BOBCAT_MASS_FILE, verbose=True,
 	)
 
 	# print the derived parameters the function is intended to infer
@@ -201,5 +201,5 @@ def test_evol_params_regular_user_output():
 
 	seda.phy_params.evol_params(
 		Lbol=6.324e-5, eLbol=6.978e-6, R=1.018, eR=0.059,
-		evolutionary_model=BOBCAT_MASS_FILE, error="percentile", verbose=True,
+		model_path=BOBCAT_MASS_FILE, error="percentile", verbose=True,
 	)

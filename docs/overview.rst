@@ -259,4 +259,4 @@ Available tables:
   - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
   - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
 
-:func:`~seda.phy_params.evol_params` reads these ``*_mass`` tables (constant-mass cooling tracks). 
+:func:`~seda.phy_params.evol_params` reads these ``*_mass`` tables (constant-mass cooling tracks). Pass the path to the desired table as ``model_path``.
