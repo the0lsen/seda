@@ -451,14 +451,13 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	return Teff_val, Teff_err
 
 ##########################
-def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", metallicity=0.0,
+def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", filename=None,
                 n_mc=10000, central="median", error="percentile", 
                 percentiles=(16, 84), verbose=True):
 	'''
 	Description:
 	------------
-		Infer fundamental parameters (mass, age, surface gravity, and effective 
-		temperature) by interpolating evolutionary models given a 
+		Infer fundamental parameters by interpolating evolutionary models given a 
 		bolometric luminosity and radius. Uncertainties are propagated with a 
 		Monte Carlo simulation.
 
@@ -476,9 +475,10 @@ def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", metallicity=0.0,
 	- model : str, optional (default "Sonora_Bobcat")
 		Evolutionary models whose tables are used. See available models in
 		``seda.models.EvolutionaryModels().available_models``.
-	- metallicity : float, optional (default 0.0)
-		Metallicity [M/H] in dex of the bundled Sonora Bobcat evolutionary table.
-		Supported values: -0.5, 0.0 (solar), and 0.5.
+	- filename : str, optional
+		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
+		If only one table is bundled, it is selected automatically.
+		If multiple tables exist, available basenames are printed.
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
@@ -492,11 +492,10 @@ def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", metallicity=0.0,
 
 	Returns:
 	--------
-	Dictionary with inferred parameters and uncertanties:
-		- ``'mass'`` : inferred mass (M_jup) and ``'emass'`` its uncertainty.
-		- ``'age'`` : inferred age (Gyr) and ``'eage'`` its uncertainty.
-		- ``'logg'`` : inferred surface gravity (cgs dex) and ``'elogg'`` its uncertainty.
-		- ``'Teff'`` : inferred effective temperature (K) and ``'eTeff'`` its uncertainty.
+	Dictionary with inferred grid columns and uncertainties:
+		- One key per interpolated column (e.g. ``'mass'``, ``'age'``, ``'logg'``, ``'Teff'``)
+		  in the native units defined by the model ``config.json``.
+		- Matching uncertainty keys prefixed with ``e`` (e.g. ``'emass'``, ``'eage'``).
 		  Each uncertainty is a scalar if ``error="std"`` or a ``(lower, upper)`` tuple if 
 		  ``error="percentile"``.
 		- ``'n_outside_grid'`` : number of Monte Carlo samples outside the grid coverage.
@@ -510,10 +509,11 @@ def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", metallicity=0.0,
 	>>> Lbol, eLbol = 6.324e-5, 6.978e-6  # in Lsun
 	>>> R, eR = 1.018, 0.059              # in Rjup
 	>>>
-	>>> # infer mass and age using the bundled solar-metallicity table
-	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR, metallicity=0.0)
+	>>> # infer parameters using the bundled solar-metallicity Bobcat table
+	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR,
+	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
 	>>> out['mass'], out['age']
-	    (41.84, 0.51)  
+	    (0.0133, 0.51)  
 
 	Author: Theo Olsen
 
@@ -537,66 +537,35 @@ def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", metallicity=0.0,
 	if Lbol <= 0:
 		raise ValueError(f"Lbol must be positive, got {Lbol}.")
 
-	# read the bundled evolutionary grid for the requested metallicity
-	model_path = models.get_evolutionary_table_path(model=model, metallicity=metallicity)
-	grid = models.read_evolutionary_model(filename=model_path, model=model)
+	basename = models.resolve_evolutionary_table(model, filename) #find basename for called model (or only model if left blank)
+	grid = models.read_evolutionary_model(filename=basename, model=model)
 
-	# evolutionary grid arrays
-	grid_mass = np.asarray(grid['mass'], dtype=float)  # M_sun
-	grid_age  = np.asarray(grid['age'],  dtype=float)  # Gyr
-	grid_Teff = np.asarray(grid['Teff'], dtype=float)  # K
-	grid_logL = np.asarray(grid['logL'], dtype=float)  # log10(L/Lsun)
-	grid_logg = np.asarray(grid['logg'], dtype=float)  # cgs dex
-	grid_R    = np.asarray(grid['radius'], dtype=float)  # R_sun
+	_, plugin = models._load_evolutionary_model(model)
+	if not hasattr(plugin, '_convert_inputs'):
+		raise NotImplementedError(
+			f'Evolutionary model "{model}" has no _convert_inputs in plugin.py. '
+			f'See the tutorial on ingesting evolutionary models.'
+		)
+	converted = plugin._convert_inputs(Lbol, eLbol, R, eR)
 
-	# convert grid mass into M_jup
-	grid_mass_mjup = (grid_mass * u.M_sun).to(u.M_jup).value
+	interp_axes = ('logL', 'radius')
+	for axis in interp_axes:
+		e_axis = f'e_{axis}'
+		if axis not in converted or e_axis not in converted:
+			raise ValueError(
+				f'{model}/plugin.py _convert_inputs must return {axis!r} and {e_axis!r} '
+				f'for Monte Carlo sampling on the grid interpolation axes.'
+			)
 
-	# build the (log L/Lsun, R/Rsun) interpolation domain
-	points = np.column_stack((grid_logL, grid_R)) 
+	grid_logL = np.asarray(grid['logL'], dtype=float)
+	grid_R    = np.asarray(grid['radius'], dtype=float)
+	points = np.column_stack((grid_logL, grid_R))
 
-	# one interpolator per quantity over the scattered (logL, R) grid
-	interp_mass = LinearNDInterpolator(points, grid_mass_mjup)
-	interp_age  = LinearNDInterpolator(points, grid_age)
-	interp_logg = LinearNDInterpolator(points, grid_logg)
-	interp_Teff = LinearNDInterpolator(points, grid_Teff)
+	# Monte Carlo simulation on grid interpolation axes (units set by plugin)
+	logL_samples = np.random.normal(converted['logL'], converted['e_logL'], n_mc)
+	R_samples    = np.random.normal(converted['radius'], converted['e_radius'], n_mc)
 
-	# convert inputs to the grid units
-	# radius: R_jup -> R_sun
-	R_rsun  = (R  * R_jup).to(R_sun).value
-	eR_rsun = (eR * R_jup).to(R_sun).value
-
-
-	# Monte Carlo simulation for the uncertainties
-	# sample Lbol and R from Gaussian distributions peaking at the input values with standard deviation equal to the input uncertainties
-	Lbol_samples = np.random.normal(Lbol, eLbol, n_mc)
-	R_samples    = np.random.normal(R_rsun, eR_rsun, n_mc)
-
-	# convert sampled Lbol to log10(L/Lsun); non-positive draws are invalid
-	mask_pos = Lbol_samples > 0
-	logL_samples = np.full(n_mc, np.nan)
-	logL_samples[mask_pos] = np.log10(Lbol_samples[mask_pos])
-
-	# query each interpolator at the sampled (logL, R) points
 	xi = np.column_stack((logL_samples, R_samples))
-	mass_samples = interp_mass(xi)
-	age_samples  = interp_age(xi)
-	logg_samples = interp_logg(xi)
-	Teff_samples = interp_Teff(xi)
-
-	# samples outside the grid coverage (or from invalid draws) return NaN
-	mask_inside = ~np.isnan(mass_samples)
-	n_outside = int(np.sum(~mask_inside))
-	frac_outside = n_outside / n_mc
-	print(f'{n_outside}/{n_mc} ({100*frac_outside:.1f}%) Monte Carlo samples fell '
-	             'outside the evolutionary grid and were excluded from the statistics.')
-	if frac_outside > 0.5:
-		print(' More than half of the Monte Carlo samples are outside the '
-		             'grid; the inferred values are poorly constrained.')
-	if n_outside == n_mc:
-		raise ValueError('All Monte Carlo samples fell outside the evolutionary grid. '
-		                 'Check that Lbol and R are within the model coverage '
-		                 'and that the table units/column order are correct.')
 
 	# helper function to summarize a set of MC samples into a central value and an uncertainty
 	def _summarize(samples):
@@ -612,29 +581,53 @@ def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", metallicity=0.0,
 			err = (val - p_lo, p_hi - val)
 		return val, err
 
-	mass_val, mass_err = _summarize(mass_samples)
-	age_val,  age_err  = _summarize(age_samples)
-	logg_val, logg_err = _summarize(logg_samples)
-	Teff_val, Teff_err = _summarize(Teff_samples)
+	out = {}  # final inferred parameters and uncertainties
+	first_samples = None  # MC samples from first column, used to count out-of-grid points
+	param_samples = {}  # MC samples for every interpolated grid column
+	for param, grid_values in grid.items():  # loop over each quantity stored in the table
+		if param in ('logL', 'radius'):  # skip axes already used to build xi
+			continue
+		interp = LinearNDInterpolator(points, np.asarray(grid_values, dtype=float))  # 2D interpolator for this column
+		samples = interp(xi)  # infer this parameter at each MC (logL, R) draw
+		param_samples[param] = samples  # store samples for later summarization
+		if first_samples is None:  # remember first column only once
+			first_samples = samples  # NaN mask is the same for all columns at the same xi
 
-	# output dictionary
-	out = {'mass': mass_val, 'emass': mass_err,  # M_jup
-	       'age': age_val,   'eage': age_err,    # Gyr
-	       'logg': logg_val, 'elogg': logg_err,  # cgs dex
-	       'Teff': Teff_val, 'eTeff': Teff_err,  # K
-	       'n_outside_grid': n_outside, 'frac_outside_grid': frac_outside} # number and fraction of samples outside the grid
+	n_outside = int(np.sum(np.isnan(first_samples)))
+	frac_outside = n_outside / n_mc
+	print(f'{n_outside}/{n_mc} ({100*frac_outside:.1f}%) Monte Carlo samples fell '
+	             'outside the evolutionary grid and were excluded from the statistics.')
+	if frac_outside > 0.5:
+		print(' More than half of the Monte Carlo samples are outside the '
+		             'grid; the inferred values are poorly constrained.')
+	if n_outside == n_mc:
+		raise ValueError('All Monte Carlo samples fell outside the evolutionary grid. '
+		                 'Check that Lbol and R are within the model coverage '
+		                 'and that the table units/column order are correct.')
 
-	# print the inferred parameters
+	for param, samples in param_samples.items():
+		val, err = _summarize(samples)
+		out[param] = val
+		out[f'e{param}'] = err
+
+	out['n_outside_grid'] = n_outside
+	out['frac_outside_grid'] = frac_outside
+
 	if verbose:
+		model_info = models.EvolutionaryModels(model)
+		units = getattr(model_info, 'units', {})
 		def _fmt_err(err):
 			if isinstance(err, tuple):
 				return '(-{:.4g}, +{:.4g})'.format(err[0], err[1])
 			return '{:.4g}'.format(err)
-		print('\nInferred fundamental parameters (Sonora Bobcat evolutionary models, [M/H]={:+.1f}):'.format(metallicity))
-		print('   mass = {:.4g} {} M_jup'.format(mass_val, _fmt_err(mass_err)))
-		print('   age  = {:.4g} {} Gyr'.format(age_val, _fmt_err(age_err)))
-		print('   logg = {:.4g} {} dex (cgs)'.format(logg_val, _fmt_err(logg_err)))
-		print('   Teff = {:.4g} {} K'.format(Teff_val, _fmt_err(Teff_err)))
+		print(f'\nInferred fundamental parameters ({model_info.name}, {basename}):')
+		for param in grid:
+			if param in ('logL', 'radius'):
+				continue
+			unit = units.get(param, '')
+			unit_str = f' {unit}' if unit else ''
+			print('   {} = {:.4g} {}{}'.format(
+				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
 
 	return out
 

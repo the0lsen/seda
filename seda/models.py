@@ -234,6 +234,8 @@ class EvolutionaryModels:
 				if not key.startswith('_comment'):
 					setattr(self, key, value)
 
+			self.model = model
+
 	def _load_model_configs(self):
 		"""
 		Scan evolutionary model folders, ensure config + plugin exist,
@@ -264,38 +266,90 @@ class EvolutionaryModels:
 
 		return model_configs
 
+	@property
+	def available_tables(self):
+		"""Basenames of evolutionary table files bundled for this model."""
+		if not hasattr(self, 'model'):
+			raise Exception('Pass a model name to EvolutionaryModels to list available tables.')
+		return _list_evolutionary_tables(self.model)
+
 ##########################
-def get_evolutionary_table_path(model, metallicity=0.0):
+def _list_evolutionary_tables(model):
 	'''
-	Description:
-	------------
-		Return the path to a bundled evolutionary table for ``model``.
-
-	Parameters:
-	-----------
-	- model : str
-		Evolutionary models. See available models in
-		``seda.models.EvolutionaryModels().available_models``.
-	- metallicity : float, optional (default 0.0)
-		Model-specific selector passed to the evolutionary model plugin.
-		For Sonora Bobcat, this is [M/H] in dex (-0.5, 0.0, or 0.5).
-
-	Returns:
-	--------
-	- str
-		Full path to the bundled evolutionary table file.
-
-	Author: Theo Olsen
-
-	Date: 06/05/2026
+	Return sorted basenames of evolutionary table files in ``evolution_aux/<model>/``.
 	'''
 
 	if model not in EvolutionaryModels().available_models:
 		raise Exception(f'Evolutionary models "{model}" are not recognized. '
 		                f'Available evolutionary models: \n          {EvolutionaryModels().available_models}')
 
-	_, plugin = _load_evolutionary_model(model)
-	return plugin._get_table_path(metallicity=metallicity)
+	config, _ = _load_evolutionary_model(model)
+	pattern = config.get('filename_pattern', '*')
+	model_dir = _EVOL_BASE_PATH / model
+	skip = {'config.json', 'plugin.py'}
+
+	tables = sorted(
+		f.name for f in model_dir.iterdir()
+		if f.is_file() and f.name not in skip and fnmatch.fnmatch(f.name, pattern)
+	)
+	return tables
+
+##########################
+def resolve_evolutionary_table(model, filename=None):
+	'''
+	Description:
+	------------
+		Resolve the basename of a bundled evolutionary table for ``model``.
+
+	Parameters:
+	-----------
+	- model : str
+		Evolutionary models. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+	- filename : str, optional
+		Basename of a table file inside ``evolution_aux/<model>/``.
+		If omitted and exactly one table exists, it is selected automatically.
+		If omitted and multiple tables exist, available basenames are printed
+		and a ``ValueError`` is raised.
+
+	Returns:
+	--------
+	- str
+		Basename of the selected evolutionary table file.
+
+	Author: Theo Olsen
+
+	Date: 06/04/2026
+	'''
+
+	tables = _list_evolutionary_tables(model)
+
+	if not tables:
+		raise FileNotFoundError(
+			f'No evolutionary table files found for "{model}" in evolution_aux/{model}/.'
+		)
+
+	if filename is None:
+		if len(tables) == 1:
+			return tables[0]
+		print(f'Available evolutionary tables for "{model}":')
+		for name in tables:
+			print(f'  - {name}')
+		raise ValueError(
+			f'Multiple evolutionary tables are available for "{model}". '
+			f'Pass filename=<basename> to select one.'
+		)
+
+	if filename not in tables:
+		print(f'Available evolutionary tables for "{model}":')
+		for name in tables:
+			print(f'  - {name}')
+		raise ValueError(
+			f'filename={filename!r} is not recognized for "{model}". '
+			f'Choose one of the available table basenames listed above.'
+		)
+
+	return filename
 
 ##########################
 def separate_params(model, spectra_name, save_results=False, out_file=None):
@@ -518,47 +572,47 @@ def read_evolutionary_model(filename, model):
 	Parameters:
 	-----------
 	- filename : str
-		Evolutionary table file name with full path.
+		Basename of an evolutionary table file inside ``evolution_aux/<model>/``.
+		Pass ``None`` to auto-select when only one table is bundled.
 	- model : str
 		Evolutionary models. See available models in
 		``seda.models.EvolutionaryModels().available_models``.
 
 	Returns:
 	--------
-	Dictionary with the evolutionary grid:
-		- ``'mass'`` : mass in M_sun
-		- ``'age'`` : age in Gyr
-		- ``'logL'`` : logarithmic bolometric luminosity, log10(L/Lsun)
-		- ``'Teff'`` : effective temperature in K
-		- ``'logg'`` : surface gravity (cgs dex)
-		- ``'radius'`` : radius in R_sun
+	Dictionary with evolutionary grid columns parsed by the model plugin.
+	Each model defines its own columns; all tables must provide ``logL`` and
+	``radius`` for interpolation. See ``config.json`` ``units`` for column units.
 
 	Example:
 	--------
 	>>> import seda
 	>>>
-	>>> # desired models and evolutionary table file
 	>>> model = 'Sonora_Bobcat'
-	>>> filename = 'my_path/evolution_tables/evo_tables+0.0/nc+0.0_co1.0_mass' # change my_path accordingly
+	>>> filename = 'nc+0.0_co1.0_mass'
 	>>>
-	>>> # read evolutionary table
 	>>> out = seda.read_evolutionary_model(filename=filename, model=model)
-	>>> mass = out['mass'] # mass in M_sun
-	>>> age = out['age'] # age in Gyr
+	>>> mass = out['mass']
 
 	Author: Theo Olsen
 
 	Date: 2026-06-04
 	'''
-	#same basic logic as read_PT_profile function, but for evolutionary models
-	# verify the input model is available
 	if model not in EvolutionaryModels().available_models:
 		raise Exception(f'Evolutionary models "{model}" are not recognized. '
 		                f'Available evolutionary models: \n          {EvolutionaryModels().available_models}')
 
-	# load the evolutionary plugin and read the table
+	basename = resolve_evolutionary_table(model, filename)
+
 	_, plugin = _load_evolutionary_model(model)
-	out = plugin._read_evolutionary_model(filename)
+	out = plugin._read_evolutionary_model(basename)
+
+	for key in ('logL', 'radius'):
+		if key not in out:
+			raise ValueError(
+				f'{model}/plugin.py must return "{key}" in the grid dictionary '
+				f'for evolutionary interpolation.'
+			)
 
 	return out
 
@@ -667,7 +721,7 @@ def _load_evolutionary_model(model):
 	spec.loader.exec_module(plugin)
 
 	# validate required functions
-	for func in ['_read_evolutionary_model', '_get_table_path']:
+	for func in ['_read_evolutionary_model', '_convert_inputs']:
 		if not hasattr(plugin, func):
 			raise AttributeError(
 				f"{model}/plugin.py (evolution_aux) must define '{func}'"

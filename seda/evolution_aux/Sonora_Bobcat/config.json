@@ -13,8 +13,6 @@
     "download": "https://zenodo.org/records/5063476",
     "_comment_filename_pattern": "Common pattern recognized in evolutionary table filenames",
     "filename_pattern": "*_mass",
-    "_comment_metallicities": "Bundled [M/H] values in dex (C/O = 1.0 for all tables)",
-    "metallicities": [-0.5, 0.0, 0.5],
     "_comment_columns": "Columns in each evolutionary table data row (logI is parsed out and ignored)",
     "columns": ["mass", "age", "logL", "Teff", "logg", "radius", "logI"],
     "_comment_units": "Units of the parsed grid quantities returned by read_evolutionary_model",
@@ -25,5 +23,10 @@
         "Teff": "K",
         "logg": "cgs dex",
         "radius": "R_sun"
+    },
+    "_comment_input_units": "Units expected for evol_params observables",
+    "input_units": {
+        "Lbol": "L_sun",
+        "R": "R_jup"
     }
 }

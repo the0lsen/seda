@@ -249,15 +249,19 @@ Parameter coverage:
   - R = [0.75, 2.59] Rjup
   - logg = [2.65, 5.48] (g in cgs)
   - Teff = [91, 2537] K
-  - [M/H] = -0.5, 0.0, and 0.5 (select with ``metallicity`` in :func:`~seda.phy_params.evol_params`)
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex (select table with ``filename`` in :func:`~seda.phy_params.evol_params`)
   - C/O = 1.0 (solar)
 
-Bundled tables:
+Bundled tables (pass as ``filename`` basename):
 
 .. code-block:: console
 
   - ``nc-0.5_co1.0_mass``  ([M/H] = -0.5)
-  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0, solar)
+  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
   - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
 
-:func:`~seda.phy_params.evol_params` reads the bundled ``*_mass`` table that matches the requested ``metallicity`` (default 0.0).
+:func:`~seda.phy_params.evol_params` reads a bundled ``*_mass`` table selected by ``filename``.
+If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
+are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
+age in Gyr, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
+
