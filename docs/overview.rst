@@ -260,7 +260,7 @@ Bundled tables (pass as ``filename`` basename):
   - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
   - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
 
-:func:`~seda.phy_params.evol_params` reads a bundled ``*_mass`` table selected by ``filename``.
+:func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
 If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
 are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
 age in Gyr, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
