@@ -237,7 +237,7 @@ Available Evolutionary Models
 Sonora Bobcat Evolutionary Tables
 +++++++++++++++++++++++++++++++++
 
-Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Download the tables from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive). Evolution sequences are provided for [M/H] = -0.5, 0.0, and 0.5 at solar C/O.
+Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Three ``*_mass`` tables (constant-mass cooling tracks) at solar C/O are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are also available from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive).
 
 Parameter coverage:
 
@@ -249,14 +249,15 @@ Parameter coverage:
   - R = [0.75, 2.59] Rjup
   - logg = [2.65, 5.48] (g in cgs)
   - Teff = [91, 2537] K
-  - [M/H] = -0.5, 0.0, and 0.5
+  - [M/H] = -0.5, 0.0, and 0.5 (select with ``metallicity`` in :func:`~seda.phy_params.evol_params`)
   - C/O = 1.0 (solar)
 
-Available tables:
+Bundled tables:
+
 .. code-block:: console
 
   - ``nc-0.5_co1.0_mass``  ([M/H] = -0.5)
-  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
+  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0, solar)
   - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
 
-:func:`~seda.phy_params.evol_params` reads these ``*_mass`` tables (constant-mass cooling tracks). Pass the path to the desired table as ``model_path``.
+:func:`~seda.phy_params.evol_params` reads the bundled ``*_mass`` table that matches the requested ``metallicity`` (default 0.0).

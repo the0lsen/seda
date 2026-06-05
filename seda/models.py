@@ -265,6 +265,39 @@ class EvolutionaryModels:
 		return model_configs
 
 ##########################
+def get_evolutionary_table_path(model, metallicity=0.0):
+	'''
+	Description:
+	------------
+		Return the path to a bundled evolutionary table for ``model``.
+
+	Parameters:
+	-----------
+	- model : str
+		Evolutionary models. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+	- metallicity : float, optional (default 0.0)
+		Model-specific selector passed to the evolutionary model plugin.
+		For Sonora Bobcat, this is [M/H] in dex (-0.5, 0.0, or 0.5).
+
+	Returns:
+	--------
+	- str
+		Full path to the bundled evolutionary table file.
+
+	Author: Theo Olsen
+
+	Date: 06/05/2026
+	'''
+
+	if model not in EvolutionaryModels().available_models:
+		raise Exception(f'Evolutionary models "{model}" are not recognized. '
+		                f'Available evolutionary models: \n          {EvolutionaryModels().available_models}')
+
+	_, plugin = _load_evolutionary_model(model)
+	return plugin._get_table_path(metallicity=metallicity)
+
+##########################
 def separate_params(model, spectra_name, save_results=False, out_file=None):
 	'''
 	Description:
@@ -634,7 +667,7 @@ def _load_evolutionary_model(model):
 	spec.loader.exec_module(plugin)
 
 	# validate required functions
-	for func in ['_read_evolutionary_model']:
+	for func in ['_read_evolutionary_model', '_get_table_path']:
 		if not hasattr(plugin, func):
 			raise AttributeError(
 				f"{model}/plugin.py (evolution_aux) must define '{func}'"

@@ -451,7 +451,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	return Teff_val, Teff_err
 
 ##########################
-def evol_params(Lbol, eLbol, R, eR, model_path, model="Sonora_Bobcat",
+def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", metallicity=0.0,
                 n_mc=10000, central="median", error="percentile", 
                 percentiles=(16, 84), verbose=True):
 	'''
@@ -473,13 +473,12 @@ def evol_params(Lbol, eLbol, R, eR, model_path, model="Sonora_Bobcat",
 		Radius in units of R_jup.
 	- eR : float
 		Uncertainty in radius (R_jup).
-	- model_path : str
-		Path to a Sonora Bobcat ``*_mass`` evolutionary table file. The expected file
-		format is one header line followed by seven-column data rows:
-		``M/Msun age(Gyr) logL/Lsun Teff(K) logg R/Rsun logI``.
 	- model : str, optional (default "Sonora_Bobcat")
 		Evolutionary models whose tables are used. See available models in
 		``seda.models.EvolutionaryModels().available_models``.
+	- metallicity : float, optional (default 0.0)
+		Metallicity [M/H] in dex of the bundled Sonora Bobcat evolutionary table.
+		Supported values: -0.5, 0.0 (solar), and 0.5.
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
@@ -511,8 +510,8 @@ def evol_params(Lbol, eLbol, R, eR, model_path, model="Sonora_Bobcat",
 	>>> Lbol, eLbol = 6.324e-5, 6.978e-6  # in Lsun
 	>>> R, eR = 1.018, 0.059              # in Rjup
 	>>>
-	>>> # path to a Sonora Bobcat *_mass evolutionary table (downloaded by the user)
-	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR, model_path='/path/to/BobcatModel.0_mass')
+	>>> # infer mass and age using the bundled solar-metallicity table
+	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR, metallicity=0.0)
 	>>> out['mass'], out['age']
 	    (41.84, 0.51)  
 
@@ -535,9 +534,11 @@ def evol_params(Lbol, eLbol, R, eR, model_path, model="Sonora_Bobcat",
 			f"Valid options: {error_valid}."
 		)
 
+	if Lbol <= 0:
+		raise ValueError(f"Lbol must be positive, got {Lbol}.")
 
-
-	# read the evolutionary grid through the evolutionary models reader 
+	# read the bundled evolutionary grid for the requested metallicity
+	model_path = models.get_evolutionary_table_path(model=model, metallicity=metallicity)
 	grid = models.read_evolutionary_model(filename=model_path, model=model)
 
 	# evolutionary grid arrays
@@ -629,7 +630,7 @@ def evol_params(Lbol, eLbol, R, eR, model_path, model="Sonora_Bobcat",
 			if isinstance(err, tuple):
 				return '(-{:.4g}, +{:.4g})'.format(err[0], err[1])
 			return '{:.4g}'.format(err)
-		print('\nInferred fundamental parameters (Sonora Bobcat evolutionary models):')
+		print('\nInferred fundamental parameters (Sonora Bobcat evolutionary models, [M/H]={:+.1f}):'.format(metallicity))
 		print('   mass = {:.4g} {} M_jup'.format(mass_val, _fmt_err(mass_err)))
 		print('   age  = {:.4g} {} Gyr'.format(age_val, _fmt_err(age_err)))
 		print('   logg = {:.4g} {} dex (cgs)'.format(logg_val, _fmt_err(logg_err)))
