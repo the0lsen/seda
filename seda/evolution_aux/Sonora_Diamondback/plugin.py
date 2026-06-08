@@ -7,17 +7,17 @@ _MODEL_DIR = Path(__file__).parent
 
 def _read_evolutionary_model(filename):
     """
-    Read a Sonora Bobcat ``*_mass`` evolutionary table and return a dictionary of grid arrays.
-    The seventh column (log I) is parsed out and not returned.
+    Read a Sonora Diamondback ``*_mass`` evolutionary table and return a dictionary of grid arrays.
+
     """
 
     table_path = _MODEL_DIR / filename
     with open(table_path) as evo_file:
         rows = [line.split() for line in evo_file]
-    data = np.array([row for row in rows if len(row) == 7], dtype=float)
+    data = np.array([row for row in rows if len(row) == 6], dtype=float)
     if data.size == 0:
-        raise ValueError(f'No seven-column data rows were found in "{table_path}". '
-                         f'Pass a Sonora Bobcat *_mass evolutionary table.')
+        raise ValueError(f'No six-column data rows were found in "{table_path}". '
+                         f'Pass a Sonora Diamondback *_mass evolutionary table.')
 
     out = {'mass': data[:, 0], 'age': data[:, 1], 'logL': data[:, 2],
            'Teff': data[:, 3], 'logg': data[:, 4], 'radius': data[:, 5]}
@@ -28,8 +28,8 @@ def _convert_inputs(Lbol, eLbol, R, eR):
     """
     Convert user inputs to grid interpolation-axis units.
 
-    Users pass Lbol in L_sun and R in R_jup. Returns 
-    the ``logL`` and ``radius`` axes used by the evolutionary grid.
+    Users pass Lbol in L_sun and R in R_jup. Returns
+    the ``logL`` and ``radius`` axes used by the evolutionary grid (log10L_sun, R_sun).
     """
 
     R_rsun = (R * R_jup).to(R_sun).value
