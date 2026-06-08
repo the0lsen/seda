@@ -260,6 +260,32 @@ Bundled tables (pass as ``filename`` basename):
   - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
   - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
 
+Sonora Diamondback Evolutionary Tables
+++++++++++++++++++++++++++++++++++++++
+
+Evolutionary tables accompanying the cloudy atmospheric models by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...975...59M/abstract>`_. Nine ``*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for three cloud treatments (``nc``, ``hybrid_f2``, and ``hybrid-grav_f2``) at [M/H] = -0.5, 0.0, and 0.5. The original tables are also available from the `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
+  - age = [0.002, 13] Gyr
+  - Lbol = [1.6e-8, 3.7e-3] Lsun (log L/Lsun = [-7.81, -2.43])
+  - R = [7.2, 31] Rjup
+  - logg = [2.57, 5.51] (g in cgs)
+  - Teff = [200, 2500] K
+  - Cloud treatment = ``nc``, ``hybrid_f2``, or ``hybrid-grav_f2`` (select table with ``filename`` in :func:`~seda.phy_params.evol_params`)
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex (select table with ``filename`` in :func:`~seda.phy_params.evol_params`)
+
+Bundled tables (pass as ``filename`` basename):
+
+.. code-block:: console
+
+  - ``nc_m-0.5_mass``, ``nc_m0.0_mass``, ``nc_m+0.5_mass``  (cloudless; [M/H] = -0.5, 0.0, +0.5)
+  - ``hybrid_f2_m-0.5_mass``, ``hybrid_f2_m0.0_mass``, ``hybrid_f2_m+0.5_mass``  (hybrid clouds, f\ :sub:`sed`\ = 2)
+  - ``hybrid-grav_f2_m-0.5_mass``, ``hybrid-grav_f2_m0.0_mass``, ``hybrid-grav_f2_m+0.5_mass``  (hybrid-grav clouds, f\ :sub:`sed`\ = 2)
+
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
 If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
 are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
