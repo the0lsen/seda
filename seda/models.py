@@ -192,6 +192,8 @@ class EvolutionaryModels:
 	Attributes:
 	-----------
 	- available_models (list) : Evolutionary models available on SEDA.
+	- available_tables (list) : Bundled table basenames for ``model`` (if provided).
+	- params (dict) : Per-table ``[min, max]`` for each grid column returned by the plugin (if provided).
 
 	Example:
 	--------
@@ -199,11 +201,16 @@ class EvolutionaryModels:
 	>>>
 	>>> # see available evolutionary models
 	>>> seda.models.EvolutionaryModels().available_models
-	    ['Sonora_Bobcat']
+	    ['Sonora_Bobcat', 'Sonora_Diamondback']
 	>>>
 	>>> # see the reference for a given evolutionary model
 	>>> seda.models.EvolutionaryModels('Sonora_Bobcat').ref
 	    'Marley et al. (2021)'
+	>>>
+	>>> # min/max of each grid column for every bundled table
+	>>> seda.models.EvolutionaryModels('Sonora_Bobcat').params['nc+0.0_co1.0_mass']['mass']
+	    [0.0005, 0.08]
+
 
 	Author: Theo Olsen
 
@@ -272,6 +279,15 @@ class EvolutionaryModels:
 		if not hasattr(self, 'model'):
 			raise Exception('Pass a model name to EvolutionaryModels to list available tables.')
 		return _list_evolutionary_tables(self.model)
+
+	@property
+	def params(self):
+		"""Per-table min/max for each grid column in native units (see ``config.json`` ``units``)."""
+		if not hasattr(self, 'model'):
+			raise Exception('Pass a model name to EvolutionaryModels to read parameter ranges.')
+		if not hasattr(self, '_params_cache'):
+			self._params_cache = _compute_evolutionary_param_ranges(self.model)
+		return self._params_cache
 
 ##########################
 def _list_evolutionary_tables(model):
@@ -615,6 +631,25 @@ def read_evolutionary_model(filename, model):
 			)
 
 	return out
+
+##########################
+def _param_ranges_from_grid(grid):
+	"""Return ``{column: [min, max]}`` for each array in an evolutionary grid dict."""
+
+	return {
+		col: [float(np.min(grid[col])), float(np.max(grid[col]))]
+		for col in grid
+	}
+
+##########################
+def _compute_evolutionary_param_ranges(model):
+	"""Min/max of every grid column for each bundled evolutionary table."""
+
+	ranges = {}
+	for filename in _list_evolutionary_tables(model):
+		grid = read_evolutionary_model(filename=filename, model=model)
+		ranges[filename] = _param_ranges_from_grid(grid)
+	return ranges
 
 ##########################
 # short name for plot legends for model spectra

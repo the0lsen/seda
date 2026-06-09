@@ -218,10 +218,10 @@ def test_evol_params_diamondback():
 		model=model, filename=DIAMONDBACK_FILENAME, n_mc=1000, verbose=False,
 	)
 
-	assert out['mass'] == pytest.approx(mass_exp, rel=0.05)
-	assert out['age'] == pytest.approx(age_exp, rel=0.05)
-	assert out['Teff'] == pytest.approx(Teff_exp, rel=0.05)
-	assert out['logg'] == pytest.approx(logg_exp, rel=0.05)
+	assert out['mass'] == pytest.approx(mass_exp, rel=0.01)
+	assert out['age'] == pytest.approx(age_exp, rel=0.01)
+	assert out['Teff'] == pytest.approx(Teff_exp, rel=0.01)
+	assert out['logg'] == pytest.approx(logg_exp, rel=0.01)
 	assert out['frac_outside_grid'] < 0.1
 
 def test_evol_params_regular_user_output():
@@ -242,3 +242,34 @@ def test_list_evolutionary_tables():
 	diamondback_tables = seda.models.EvolutionaryModels('Sonora_Diamondback').available_tables
 	assert 'nc_m0.0_mass' in diamondback_tables
 	assert len(diamondback_tables) == 9
+
+def test_evolutionary_models_params_requires_model():
+	"""params should require a model name, like available_tables."""
+	with pytest.raises(Exception, match='Pass a model name'):
+		_ = seda.models.EvolutionaryModels().params
+
+@pytest.mark.parametrize('model', sorted(seda.models.EvolutionaryModels().available_models))
+def test_evolutionary_models_params_structure(model):
+	"""params should list min/max for every grid column in each bundled table."""
+	model_obj = seda.models.EvolutionaryModels(model)
+	params = model_obj.params
+
+	assert set(params) == set(model_obj.available_tables)
+	for filename in model_obj.available_tables:
+		grid = seda.models.read_evolutionary_model(filename=filename, model=model)
+		assert set(params[filename]) == set(grid)
+		for col, (vmin, vmax) in params[filename].items():
+			assert vmin == pytest.approx(float(grid[col].min()))
+			assert vmax == pytest.approx(float(grid[col].max()))
+
+def test_evolutionary_models_params_bobcat_spot_check():
+	"""Spot-check known coverage for the solar-metallicity Bobcat table."""
+	params = seda.models.EvolutionaryModels('Sonora_Bobcat').params['nc+0.0_co1.0_mass']
+
+	assert params['mass'] == [0.0005, 0.08]
+	assert params['age'] == [0.001, 15.0]
+	assert params['logL'] == pytest.approx([-9.213, -2.662])
+	assert params['Teff'] == [91.0, 2537.0]
+	assert params['logg'] == pytest.approx([2.654, 5.484])
+	assert params['radius'] == pytest.approx([0.0769, 0.2657])
+	assert 'logI' not in params

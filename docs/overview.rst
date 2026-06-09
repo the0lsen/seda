@@ -47,26 +47,41 @@ Code Workflow of Forward Modeling
 
 Useful Tools
 ------------
-:math:`\texttt{SEDA}` includes several useful functions that can be used separately:
+
+:math:`\texttt{SEDA}` includes several useful functions that can be used separately.
+
+Empirical Analysis
+++++++++++++++++++
+
   - :func:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: Calculates synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see `tutorial_synthetic_photometry <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`_).
-  - :mod:`~seda.spectral_indices.spectral_indices`: Measures the depth of absorption features using literature-defined or user-defined spectral indices. It includes: 
+  - :mod:`~seda.spectral_indices.spectral_indices`: Measures the depth of absorption features using literature-defined or user-defined spectral indices. It includes:
 
     - :func:`~seda.spectral_indices.spectral_indices.silicate_index` to assess cloudiness via the 9 microns silicate absorption (`Suárez & Metchev 2022 <https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.5701S/abstract>`_, `Suárez & Metchev 2023 <https://ui.adsabs.harvard.edu/abs/2023MNRAS.523.4739S/abstract>`_).
     - :func:`~seda.spectral_indices.spectral_indices.water_index` for the 6.25 microns water absorption, :func:`~seda.spectral_indices.spectral_indices.methane_index` for the 7.65 microns methane feature, and :func:`~seda.spectral_indices.spectral_indices.ammonia_index` for the 10.5 microns ammonia feature (`Cushing et al. 2006 <https://ui.adsabs.harvard.edu/abs/2006ApJ...648..614C/abstract>`_, `Suárez & Metchev 2022 <https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.5701S/abstract>`_, `Suárez & Metchev 2023 <https://ui.adsabs.harvard.edu/abs/2023MNRAS.523.4739S/abstract>`_) (see `tutorial_spectral_indices <https://seda.readthedocs.io/en/latest/notebooks/tutorial_spectral_indices.html>`_  and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
     - Near-infrared indices designed to identify potential variable objects (`Ashraf et al. 2022 <https://ui.adsabs.harvard.edu/abs/2022ApJ...934..178A>`_, `Oliveros-Gomez et al. 2022 <https://ui.adsabs.harvard.edu/abs/2022ApJ...939...72O>`_, `Oliveros-Gomez et al. 2024 <https://ui.adsabs.harvard.edu/abs/2024ApJ...967..149O>`_).
     - :func:`~seda.spectral_indices.spectral_indices.user_index` for a user-defined spectral index, using the same approaches as the literature-defined indices described above.
-  - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
-  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_ ).
-  - :func:`~seda.utils.read_SVO_params`: Reads parameters of interest (e.g., effective wavelength, effective width, and zero point) from SVO for a list of filters.
-  - :func:`~seda.utils.convolve_spectrum`: Convolves spectra to a desired resolution at a given wavelength.
   - :func:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: Converts fluxes into magnitudes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :func:`~seda.synthetic_photometry.synthetic_photometry.mag_to_flux`: Converts magnitudes into fluxes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :func:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: Converts fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :func:`~seda.utils.spt_to_teff`: Estimates effective temperatures from spectral types using relationships in the literature.
   - :func:`~seda.utils.teff_to_spt`: Estimates spectral type from effective temperature, using numerical inversion of :func:`~seda.utils.spt_to_teff`.
   - :func:`~seda.utils.app_to_abs_flux`: Converts apparent fluxes into absolute fluxes considering a distance.
+
+Forward Modeling
+++++++++++++++++
+
+  - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
   - :func:`~seda.utils.separate_params`: Extracts parameters from model spectra file names.
+  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
+
+
+Auxiliary Tools
++++++++++++++++
+
+  - :func:`~seda.utils.read_SVO_params`: Reads parameters of interest (e.g., effective wavelength, effective width, and zero point) from SVO for a list of filters.
+  - :func:`~seda.utils.convolve_spectrum`: Convolves spectra to a desired resolution at a given wavelength.
+
 
 .. _models:
 
@@ -286,6 +301,7 @@ Bundled tables (pass as ``filename`` basename):
   - ``hybrid_f2_m-0.5_mass``, ``hybrid_f2_m0.0_mass``, ``hybrid_f2_m+0.5_mass``  (hybrid clouds, f\ :sub:`sed`\ = 2)
   - ``hybrid-grav_f2_m-0.5_mass``, ``hybrid-grav_f2_m0.0_mass``, ``hybrid-grav_f2_m+0.5_mass``  (hybrid-grav clouds, f\ :sub:`sed`\ = 2)
 
+For more information on these filenames, please refer to the 'Evolution' section at `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
 
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
 If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
