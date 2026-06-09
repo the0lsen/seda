@@ -232,7 +232,7 @@ Parameter coverage:
 Available Evolutionary Models
 -----------------------------
 
-:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`.
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
 
 Sonora Bobcat Evolutionary Tables
 +++++++++++++++++++++++++++++++++
@@ -275,8 +275,8 @@ Parameter coverage:
   - R = [7.2, 31] Rjup
   - logg = [2.57, 5.51] (g in cgs)
   - Teff = [200, 2500] K
-  - Cloud treatment = ``nc``, ``hybrid_f2``, or ``hybrid-grav_f2`` (select table with ``filename`` in :func:`~seda.phy_params.evol_params`)
-  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex (select table with ``filename`` in :func:`~seda.phy_params.evol_params`)
+  - Cloud treatment = ``nc``, ``hybrid_f2``, or ``hybrid-grav_f2`` 
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex 
 
 Bundled tables (pass as ``filename`` basename):
 
@@ -285,6 +285,7 @@ Bundled tables (pass as ``filename`` basename):
   - ``nc_m-0.5_mass``, ``nc_m0.0_mass``, ``nc_m+0.5_mass``  (cloudless; [M/H] = -0.5, 0.0, +0.5)
   - ``hybrid_f2_m-0.5_mass``, ``hybrid_f2_m0.0_mass``, ``hybrid_f2_m+0.5_mass``  (hybrid clouds, f\ :sub:`sed`\ = 2)
   - ``hybrid-grav_f2_m-0.5_mass``, ``hybrid-grav_f2_m0.0_mass``, ``hybrid-grav_f2_m+0.5_mass``  (hybrid-grav clouds, f\ :sub:`sed`\ = 2)
+
 
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
 If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters

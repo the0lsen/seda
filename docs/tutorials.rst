@@ -31,6 +31,7 @@ Handling Evolutionary Models
 .. toctree::
    :maxdepth: 1
 
+   notebooks/tutorial_evolutionary_models_examination.ipynb
    notebooks/tutorial_ingest_evolutionary_models.ipynb
 
 Chi-square minimization

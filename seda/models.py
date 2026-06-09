@@ -329,7 +329,7 @@ def resolve_evolutionary_table(model, filename=None):
 			f'No evolutionary table files found for "{model}" in evolution_aux/{model}/.'
 		)
 
-	if filename is None:
+	if filename is None:   #automatically return only avaialble table
 		if len(tables) == 1:
 			return tables[0]
 		print(f'Available evolutionary tables for "{model}":')
@@ -720,7 +720,7 @@ def _load_evolutionary_model(model):
 	# execute the module code to load it into Python
 	spec.loader.exec_module(plugin)
 
-	# validate required functions
+	# validate required functions in model folder
 	for func in ['_read_evolutionary_model', '_convert_inputs']:
 		if not hasattr(plugin, func):
 			raise AttributeError(
