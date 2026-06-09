@@ -226,9 +226,10 @@ equilibrium and non-equilibrium chemistry;
 metallicities from very low ($-2.4$ dex) to super-solar ($+0.5$ dex);
 temperatures from the coldest brown dwarfs through hot and temperate exoplanets to low-mass stars ($\sim$ 300--4200 K);
 and surface gravities ($\log g$=3.0--5.5) appropriate for both young and old ultracool objects.
-`SEDA` also allows users to easily incorporate additional atmospheric model grids.
+`SEDA` also allows users to easily incorporate additional atmospheric and evolutionary model grids.
 Fitting these model grids to observational data, the code infers chemical and physical parameters defined as free parameters in the grids, 
-along with additional quantities such as bolometric luminosity and radius, when the distance is known (see [Mathematics](#mathematics)).
+along with additional quantities such as bolometric luminosity and radius, when the distance is known (see [Mathematics](#mathematics)). Evolutionary models can also be used to infer various fundamental parameters including mass, age, surface gravity, and temperature.
+
 
 Empirical analyses of SEDs include measurements of the strengths of key spectral features produced by gas and grain species using literature-defined or user-defined spectral indices, i.e., flux ratios that quantify the depth of specific spectral signatures. 
 These indices are applied to mid-infrared features [e.g., @Cushing_etal2006; @Suarez_Metchev2022; @Suarez_Metchev2023], as well as to near-infrared diagnostics designed to identify potential variable objects [e.g., @Ashraf_etal2022; @Oliveros-Gomez_etal2022; @Oliveros-Gomez_etal2024]. 
@@ -306,9 +307,8 @@ In this work, we substantially expand upon that initial framework and release a 
 
 # Future Developments
 Among several planned additions that will further increase the functionality of the code, future releases will 
-$(i)$ enable measurements of projected rotational velocity ($v\sin i$) and radial velocity (RV) by incorporating rotational broadening and Doppler shifting into atmospheric model spectra, as well as inference of viewing geometry based on $v\sin i$, rotation period, and radius constraints [e.g., @Vos_etal2017], 
-$(ii)$ derive physical parameters such as mass, age, surface gravity, and temperature by combining atmospheric model-fitting results with evolutionary models [e.g., @Suarez_etal2021a], and 
-$(iii)$ implement cross-correlation analyses to identify molecular species in medium- to high-resolution spectroscopic observations [e.g., @Petit_dit_de_la_Roche_etal2018].
+$(i)$ enable measurements of projected rotational velocity ($v\sin i$) and radial velocity (RV) by incorporating rotational broadening and Doppler shifting into atmospheric model spectra, as well as inference of viewing geometry based on $v\sin i$, rotation period, and radius constraints [e.g., @Vos_etal2017], and 
+$(ii)$ implement cross-correlation analyses to identify molecular species in medium- to high-resolution spectroscopic observations [e.g., @Petit_dit_de_la_Roche_etal2018].
 
 We welcome feedback, suggestions, and contributions from the community to help improve `SEDA` in future releases.
 

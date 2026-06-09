@@ -451,7 +451,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	return Teff_val, Teff_err
 
 ##########################
-def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", filename=None,
+def evol_params(Lbol, eLbol, R, eR, model=None, filename=None,
                 n_mc=10000, central="median", error="percentile", 
                 percentiles=(16, 84), verbose=True):
 	'''
@@ -472,7 +472,7 @@ def evol_params(Lbol, eLbol, R, eR, model="Sonora_Bobcat", filename=None,
 		Radius in units of R_jup.
 	- eR : float
 		Uncertainty in radius (R_jup).
-	- model : str, optional (default "Sonora_Bobcat")
+	- model : str
 		Evolutionary models whose tables are used. See available models in
 		``seda.models.EvolutionaryModels().available_models``.
 	- filename : str, optional
