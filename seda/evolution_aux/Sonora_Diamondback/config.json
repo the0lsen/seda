@@ -22,6 +22,6 @@
         "logL": "log10(L/Lsun)",
         "Teff": "K",
         "logg": "cgs dex",
-        "radius": "R_sun"
+        "radius": "R_jup"      
     }
 }

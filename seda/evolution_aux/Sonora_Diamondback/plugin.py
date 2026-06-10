@@ -29,14 +29,13 @@ def _convert_inputs(Lbol, eLbol, R, eR):
     Convert user inputs to grid interpolation-axis units.
 
     Users pass Lbol in L_sun and R in R_jup. Returns
-    the ``logL`` and ``radius`` axes used by the evolutionary grid (log10L_sun, R_sun).
+    the ``logL`` and ``radius`` axes used by the evolutionary grid (log10L_sun, R_jup).
     """
+    #there is a header error in Diamondback models, in the model R is in R_jup, NOT R_sun
 
-    R_rsun = (R * R_jup).to(R_sun).value
-    eR_rsun = (eR * R_jup).to(R_sun).value
     logL = np.log10(Lbol)
     e_logL = eLbol / (Lbol * np.log(10))
     return {
         'logL': logL, 'e_logL': e_logL,
-        'radius': R_rsun, 'e_radius': eR_rsun,
+        'radius': R, 'e_radius': eR,
     }
