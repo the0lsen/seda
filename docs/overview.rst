@@ -263,7 +263,7 @@ Parameter coverage:
   - R = [0.75, 2.59] Rjup
   - logg = [2.65, 5.48] (g in cgs)
   - Teff = [91, 2537] K
-  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex (select table with ``filename`` in :func:`~seda.phy_params.evol_params`)
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex
   - C/O = 1.0 (solar)
 
 Bundled tables (pass as ``filename`` basename):
@@ -301,6 +301,31 @@ Bundled tables (pass as ``filename`` basename):
   - ``hybrid-grav_f2_m-0.5_mass``, ``hybrid-grav_f2_m0.0_mass``, ``hybrid-grav_f2_m+0.5_mass``  (hybrid-grav clouds, f\ :sub:`sed`\ = 2)
 
 For more information on these filenames, please refer to the 'Evolution' section at `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
+
+ATMO 2020 Evolutionary Tables
++++++++++++++++++++++++++++++
+
+Evolutionary tables accompanying the cloudless atmospheric models by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. Three ``*_mass.txt`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for equilibrium chemistry (CEQ) and non-equilibrium chemistry with weak (logKzz = 4) and strong (logKzz = 6) vertical mixing. The original tables are also available from the `ATMO 2020 models <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [1.05, 79] Mjup (0.001 to 0.075 Msun)
+  - age = [0.001, 10] Gyr
+  - Lbol = [1.8e-8, 5.4e-2] Lsun (log L/Lsun = [-7.74, -1.27])
+  - R = [0.74, 7.7] Rjup
+  - logg = [3.0, 5.5] (g in cgs)
+  - Teff = [207, 3160] K
+  - Chemistry = CEQ, NEQ_weak (logKzz = 4), or NEQ_strong (logKzz = 6) 
+
+Bundled tables (pass as ``filename`` basename):
+
+.. code-block:: console
+
+  - ``ATMO_CEQ_mass.txt``  (equilibrium chemistry)
+  - ``ATMO_NEQ_weak_mass.txt``  (non-equilibrium chemistry due to weak vertical mixing; logKzz = 4)
+  - ``ATMO_NEQ_strong_mass.txt``  (non-equilibrium chemistry due to strong vertical mixing; logKzz = 6)
 
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
 If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
