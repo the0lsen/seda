@@ -71,7 +71,7 @@ Empirical Analysis
 
 
 Atmospheric and Evolutionary Models
-++++++++++++++++
++++++++++++++++++++++++++++++++++++
 
   - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
