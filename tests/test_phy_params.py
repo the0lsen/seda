@@ -11,6 +11,15 @@ DIAMONDBACK_FILENAME = 'nc_m0.0_mass'
 # ----------------------------
 # Helpers
 # ----------------------------
+def _grid_radius_in_rjup(model, radius):
+	"""Convert a native grid radius value to R_jup using ``config.json`` units."""
+	radius_unit = seda.models.EvolutionaryModels(model).units['radius']
+	if radius_unit == 'R_sun':
+		return (radius * R_sun).to(R_jup).value
+	if radius_unit == 'R_jup':
+		return float(radius)
+	raise ValueError(f'Unsupported evolutionary grid radius unit: {radius_unit!r}')
+
 def _bundled_grid_inputs(model, filename, idx=500):
 	"""Return (Lbol, R, Teff, logg, age, mass) for one row of a bundled evolutionary table."""
 	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
@@ -18,13 +27,57 @@ def _bundled_grid_inputs(model, filename, idx=500):
 		idx = len(grid['mass']) + idx
 
 	Lbol = 10.0 ** grid['logL'][idx]
-	R_rjup = (grid['radius'][idx] * R_sun).to(R_jup).value
+	R_rjup = _grid_radius_in_rjup(model, grid['radius'][idx])
 	mass_msun = grid['mass'][idx]
 	return Lbol, R_rjup, grid['Teff'][idx], grid['logg'][idx], grid['age'][idx], mass_msun
+
+def _grid_sample_indices(n_rows, n_samples=5):
+	"""Return evenly spaced row indices across an evolutionary table."""
+	if n_rows == 1:
+		return [0]
+	step = max((n_rows - 1) // (n_samples - 1), 1)
+	indices = sorted({min(i * step, n_rows - 1) for i in range(n_samples)})
+	return indices
+
+def _evol_sb_teff_cases():
+	"""(model, filename, grid_index) cases spanning every bundled evolutionary table."""
+	cases = []
+	for model, filename in load_evolutionary_table_catalog():
+		grid = seda.models.read_evolutionary_model(filename=filename, model=model)
+		for idx in _grid_sample_indices(len(grid['mass'])):
+			cases.append(
+				pytest.param(
+					model, filename, idx,
+					id=f'{model}-{filename}-row{idx}',
+				)
+			)
+	return cases
 
 # ----------------------------
 # Tests
 # ----------------------------
+@pytest.mark.parametrize('model, filename, idx', _evol_sb_teff_cases())
+def test_evol_teff_matches_stefan_boltzmann(model, filename, idx):
+	"""Teff from evol_params should match phy_params.teff (SB law) for the same (Lbol, R)."""
+	np.random.seed(0)
+	Lbol, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename, idx=idx)
+	eLbol = 1e-12 * Lbol
+	eR = 1e-12 * R_rjup
+
+	teff_evol = seda.phy_params.evol_params(
+		Lbol=Lbol, eLbol=eLbol, R=R_rjup, eR=eR,
+		model=model, filename=filename, n_mc=1000, verbose=False,
+	)['Teff']
+
+	teff_sb, _ = seda.phy_params.teff(
+		Lbol=Lbol, eLbol=eLbol, R=R_rjup, eR=eR, n_mc=1000,
+	)
+
+	assert teff_evol == pytest.approx(teff_sb, rel=0.02), (
+		f'{model}/{filename} row {idx}: evol_params Teff={teff_evol:.2f} K '
+		f'differs from Stefan-Boltzmann Teff={teff_sb:.2f} K'
+	)
+
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_evol_params_round_trip(model, filename):
 	"""Feeding a grid row's (Lbol, R) should recover that row's mass/age/logg/Teff."""
@@ -243,6 +296,10 @@ def test_list_evolutionary_tables():
 	assert 'nc_m0.0_mass' in diamondback_tables
 	assert len(diamondback_tables) == 9
 
+	atmo_tables = seda.models.EvolutionaryModels('ATMO2020').available_tables
+	assert 'ATMO_CEQ_mass.txt' in atmo_tables
+	assert len(atmo_tables) == 3
+
 def test_evolutionary_models_params_requires_model():
 	"""params should require a model name, like available_tables."""
 	with pytest.raises(Exception, match='Pass a model name'):
@@ -273,3 +330,14 @@ def test_evolutionary_models_params_bobcat_spot_check():
 	assert params['logg'] == pytest.approx([2.654, 5.484])
 	assert params['radius'] == pytest.approx([0.0769, 0.2657])
 	assert 'logI' not in params
+
+def test_evolutionary_models_params_atmo_spot_check():
+	"""Spot-check known coverage for the ATMO 2020 CEQ table."""
+	params = seda.models.EvolutionaryModels('ATMO2020').params['ATMO_CEQ_mass.txt']
+
+	assert params['mass'] == [0.001, 0.075]
+	assert params['age'] == [0.001, 10.0]
+	assert params['logL'] == pytest.approx([-7.74437436, -1.27027279])
+	assert params['Teff'] == pytest.approx([206.71029843, 3156.67625353])
+	assert params['logg'] == pytest.approx([3.01108287, 5.51013179])
+	assert params['radius'] == pytest.approx([0.07585432, 0.79547701])

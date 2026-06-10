@@ -286,7 +286,7 @@ Parameter coverage:
   - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
   - age = [0.002, 13] Gyr
   - Lbol = [1.6e-8, 3.7e-3] Lsun (log L/Lsun = [-7.81, -2.43])
-  - R = [7.2, 31] Rjup
+  - R = [0.76, 2.5] Rjup
   - logg = [2.57, 5.51] (g in cgs)
   - Teff = [200, 2500] K
   - Cloud treatment = ``nc``, ``hybrid_f2``, or ``hybrid-grav_f2`` 
