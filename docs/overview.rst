@@ -79,6 +79,7 @@ Atmospheric and Evolutionary Models
   - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
   - :func:`~seda.phy_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
   - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
+  - :func:`~seda.phy_params.inclination`: Derives the rotation-axis inclination from projected rotation velocity (:math:`v\sin i`), rotation period, and radius, with Monte Carlo uncertainty propagation.
   - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
 
 

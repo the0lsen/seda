@@ -449,6 +449,170 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 		Teff_err = (Teff_val - p_lo, p_hi - Teff_val)
 
 	return Teff_val, Teff_err
+##########################
+def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
+                error="percentile", percentiles=(16, 84)):
+    '''
+    Description:
+    ------------
+        Calculate the inclination angle from an objects
+        projected rotation velocity (v sin i), rotation period (P),
+        and radius (R), using:
+ 
+            sin i = (P * vsini) / (2 * pi * R)
+ 
+        Uncertainty is propagated via Monte Carlo sampling.
+ 
+    Parameters:
+    -----------
+    - vsini : float
+        Projected rotation velocity in units of km/s.
+    - evsini : float
+        Uncertainty in vsini (km/s).
+    - P : float
+        Rotation period in hours.
+    - eP : float
+        Uncertainty in the rotation period (hours).
+    - R : float
+        Radius in units of R_jup.
+    - eR : float
+        Uncertainty in radius (R_jup).
+    - n_mc : int, optional (default 10000)
+        Number of Monte Carlo samples for uncertainty propagation.
+    - central : str, optional (default "median")
+        "mean" or "median" for the central value of the inclination.
+    - error : str, optional (default "percentile")
+        "std" for symmetric standard deviation, or "percentile" for
+        asymmetric percentile-based errors (recommended, since the
+        posterior for i is generically asymmetric near 90 deg).
+    - percentiles : tuple or list, optional (default (16, 84))
+        Lower and upper percentiles used when error="percentile".
+ 
+    Returns:
+    --------
+    - inc : float
+        Inclination angle in degrees.
+    - einc : float or tuple
+        Inclination uncertainty in degrees.
+        - If error="std": scalar symmetric uncertainty.
+        - If error="percentile": tuple (lower_err, upper_err).
+ 
+    Notes:
+    ------
+    - MC samples that yield |sin i| > 1 are unphysical (they arise when
+      noise pushes vsini above the true equatorial velocity). These samples
+      are discarded, and the number of rejected samples is reported when
+      non-zero. A large rejection fraction indicates the inputs are only
+      marginally consistent with the formula and the result should be
+      treated with caution.
+    - The inclination posterior is bounded at 90 deg (sin i <= 1), so
+      error="percentile" is strongly preferred over "std" when vsini is
+      close to 2*pi*R/P.
+ 
+    Example:
+    --------
+    >>> import seda
+    >>>
+    >>> # input parameters
+    >>> vsini, evsini = 26.4, 1.2  # km/s
+    >>> P, eP       =  3.1, 0.1   # hours
+    >>> R, eR       =  1.05, 0.06  # R_jup
+    >>>
+    >>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
+    ...                             P=P, eP=eP, R=R, eR=eR)
+        (38.6, (3.4, 3.9))   
+ 
+    Author: Theo Olsen
+ 
+    Date: 2026-06-10
+    '''
+ 
+    # ensure percentiles is a tuple
+    percentiles = tuple(percentiles)
+ 
+    # validate "central" and "error"
+    central_valid = ["mean", "median"]
+    if central not in central_valid:
+        raise ValueError(
+            f"central={central!r} is not recognized. "
+            f"Valid options: {central_valid}."
+        )
+    error_valid = ["std", "percentile"]
+    if error not in error_valid:
+        raise ValueError(
+            f"error={error!r} is not recognized. "
+            f"Valid options: {error_valid}."
+        )
+ 
+    # attach units
+    vsini_u  = vsini  * u.km / u.s
+    evsini_u = evsini * u.km / u.s
+ 
+    P_u  = P  * u.hour
+    eP_u = eP * u.hour
+ 
+    R_u  = R  * R_jup
+    eR_u = eR * R_jup
+ 
+    # deterministic inclination (sanity check, not returned)
+    v_eq_det = (2 * np.pi * R_u / P_u).to(u.km / u.s)
+    sin_i_det = (vsini_u / v_eq_det).value
+    sin_i_det = np.clip(sin_i_det, -1.0, 1.0)
+    inc_det   = np.degrees(np.arcsin(sin_i_det))
+ 
+    # Monte Carlo samples — drawn from Gaussian distributions
+    vsini_samples = np.random.normal(vsini_u.value,  evsini_u.value, n_mc) * vsini_u.unit
+    P_samples     = np.random.normal(P_u.value,      eP_u.value,     n_mc) * P_u.unit
+    R_samples     = np.random.normal(R_u.value,      eR_u.value,     n_mc) * R_u.unit
+ 
+    # equatorial velocity for each sample
+    v_eq_samples = (2 * np.pi * R_samples / P_samples).to(u.km / u.s)
+ 
+    # sin i for each sample
+    sin_i_samples = (vsini_samples / v_eq_samples).value
+ 
+    # reject unphysical samples (|sin i| > 1)
+    mask_physical = np.abs(sin_i_samples) <= 1.0
+    n_rejected = np.sum(~mask_physical)
+    if n_rejected > 0:
+        print(
+            f"{n_rejected}/{n_mc} MC samples rejected: "
+            f"|sin i| > 1 (vsini exceeds v_eq for those draws). "
+            f"Check that your inputs are consistent with the formula."
+        )
+ 
+    sin_i_valid = sin_i_samples[mask_physical]
+ 
+    # also remove any NaN values (e.g. from P_samples ~ 0)
+    mask_nonan = ~np.isnan(sin_i_valid)
+    if not all(mask_nonan):
+        print(f"{np.sum(~mask_nonan)} additional NaN samples discarded.")
+    sin_i_valid = sin_i_valid[mask_nonan]
+
+    # inclination in degrees
+    inc_samples = np.degrees(np.arcsin(sin_i_valid))
+
+    if inc_samples.size == 0:
+        raise ValueError(
+            'All Monte Carlo samples were rejected (|sin i| > 1 or NaN). '
+            'Check that vsini, P, and R are mutually consistent.'
+        )
+
+    # central value
+    if central == "mean":
+        inc_val = np.mean(inc_samples)
+    elif central == "median":
+        inc_val = np.median(inc_samples)
+ 
+    # uncertainty
+    if error == "std":
+        inc_err = np.std(inc_samples)
+ 
+    elif error == "percentile":
+        p_lo, p_hi = np.percentile(inc_samples, percentiles)
+        inc_err = (inc_val - p_lo, p_hi - inc_val)
+ 
+    return inc_val, inc_err
 
 ##########################
 def evol_params(Lbol, eLbol, R, eR, model, filename=None,

@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from astropy import units as u
 from astropy.constants import R_jup, R_sun
 
 import seda
@@ -363,3 +364,140 @@ def test_evolutionary_models_params_bhac_spot_check():
 	assert params['Rrad'] == pytest.approx([0.0, 1.745])
 	assert params['k2conv'] == pytest.approx([0.00124, 0.4944])
 	assert params['k2rad'] == pytest.approx([0.0, 0.3072])
+
+def _expected_inclination_deg(vsini, P, R):
+	"""Deterministic inclination from sin i = P*vsini / (2*pi*R)."""
+	vsini_u = vsini * u.km / u.s
+	P_u = P * u.hour
+	R_u = R * R_jup
+	v_eq = (2 * np.pi * R_u / P_u).to(u.km / u.s)
+	sin_i = (vsini_u / v_eq).decompose().value
+	return np.degrees(np.arcsin(np.clip(sin_i, -1.0, 1.0)))
+
+def _vsini_for_inclination(P, R, inc_deg):
+	"""Invert the inclination formula for a target inclination."""
+	P_u = P * u.hour
+	R_u = R * R_jup
+	v_eq = (2 * np.pi * R_u / P_u).to(u.km / u.s)
+	return (v_eq * np.sin(np.radians(inc_deg))).to(u.km / u.s).value
+
+@pytest.mark.parametrize(
+	'inc_deg, P, R',
+	[
+		(30.0, 4.0, 1.10),
+		(45.0, 5.0, 1.20),
+		(60.0, 3.1, 1.05),
+		(85.0, 2.5, 1.30),
+	],
+)
+def test_inclination_recovers_known_angle(inc_deg, P, R):
+	"""With tiny errors, inclination should round-trip the sin i formula."""
+	vsini = _vsini_for_inclination(P, R, inc_deg)
+	np.random.seed(0)
+
+	inc, einc = seda.phy_params.inclination(
+		vsini=vsini, evsini=1e-10 * vsini,
+		P=P, eP=1e-10 * P,
+		R=R, eR=1e-10 * R,
+		n_mc=5000,
+	)
+
+	assert inc == pytest.approx(inc_deg, abs=0.5)
+	assert einc[0] >= 0 and einc[1] >= 0
+
+def test_inclination_matches_deterministic_formula():
+	"""Spot-check against the docstring example inputs."""
+	vsini, evsini = 26.4, 1.2
+	P, eP = 3.1, 0.1
+	R, eR = 1.05, 0.06
+	expected = _expected_inclination_deg(vsini, P, R)
+
+	np.random.seed(0)
+	inc, einc = seda.phy_params.inclination(
+		vsini=vsini, evsini=evsini,
+		P=P, eP=eP, R=R, eR=eR,
+		n_mc=10000,
+	)
+
+	assert inc == pytest.approx(expected, rel=0.05)
+	assert len(einc) == 2
+
+def test_inclination_std_error_mode():
+	"""With error='std', the uncertainty should be a scalar."""
+	np.random.seed(0)
+	inc, einc = seda.phy_params.inclination(
+		vsini=20.0, evsini=1.0,
+		P=4.0, eP=0.1,
+		R=1.1, eR=0.05,
+		error='std', n_mc=5000,
+	)
+	assert np.isscalar(einc)
+	assert einc > 0
+	assert np.isfinite(inc)
+
+def test_inclination_invalid_central_raises():
+	with pytest.raises(ValueError, match='central'):
+		seda.phy_params.inclination(
+			vsini=20.0, evsini=1.0,
+			P=4.0, eP=0.1,
+			R=1.1, eR=0.05,
+			central='mode', n_mc=100,
+		)
+
+def test_inclination_reproducible_with_seed():
+	"""Fixed seed should give identical MC results."""
+	kwargs = dict(
+		vsini=26.4, evsini=1.2,
+		P=3.1, eP=0.1,
+		R=1.05, eR=0.06,
+		n_mc=5000,
+	)
+	np.random.seed(42)
+	inc1, einc1 = seda.phy_params.inclination(**kwargs)
+	np.random.seed(42)
+	inc2, einc2 = seda.phy_params.inclination(**kwargs)
+
+	assert inc1 == pytest.approx(inc2)
+	assert einc1 == pytest.approx(einc2)
+
+def test_inclination_face_on():
+	"""vsini = 0 should give i = 0 deg."""
+	np.random.seed(0)
+	inc, _ = seda.phy_params.inclination(
+		vsini=0.0, evsini=0.1,
+		P=5.0, eP=0.1,
+		R=1.0, eR=0.05,
+		n_mc=2000,
+	)
+	assert inc == pytest.approx(0.0, abs=0.5)
+
+def test_inclination_reports_rejected_samples(capsys):
+	"""Unphysical draws with |sin i| > 1 should be reported and discarded."""
+	P, R = 10.0, 0.5
+	v_eq = (2 * np.pi * R * R_jup / (P * u.hour)).to(u.km / u.s).value
+	vsini = 0.95 * v_eq
+	evsini = 0.1 * v_eq
+
+	np.random.seed(0)
+	inc, einc = seda.phy_params.inclination(
+		vsini=vsini, evsini=evsini,
+		P=P, eP=0.5,
+		R=R, eR=0.05,
+		n_mc=1000,
+	)
+	captured = capsys.readouterr()
+	assert 'MC samples rejected' in captured.out
+	assert 0.0 < inc < 90.0
+	assert len(einc) == 2
+
+def test_inclination_all_samples_rejected_raises(capsys):
+	"""When every draw is unphysical, inclination should raise."""
+	with pytest.raises(ValueError, match='All Monte Carlo samples were rejected'):
+		seda.phy_params.inclination(
+			vsini=100.0, evsini=5.0,
+			P=10.0, eP=0.5,
+			R=0.5, eR=0.05,
+			n_mc=1000,
+		)
+	captured = capsys.readouterr()
+	assert 'MC samples rejected' in captured.out
