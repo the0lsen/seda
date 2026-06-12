@@ -197,7 +197,7 @@ Parameter coverage:
 ATMO 2020 Models
 ++++++++++++++++
 
-Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. Download the `ATMO 2020 models <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_. The models include three grids:
+Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. SEDA uses the `ATMO_2020_neweos_update' models, available for download at <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_. The models include three grids:
   
   - ATMO2020_CEQ: cloudless models with equilibrium chemistry.
   - ATMO2020_NEQ_weak: cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
