@@ -46,3 +46,25 @@ def load_model_spectra_catalog():
         catalog.append((model, str(example_file)))
 
     return catalog
+
+def load_evolutionary_model_catalog():
+	"""Return list of (model, filename) with one example table per evolutionary model."""
+
+	catalog = []
+	for model in sorted(seda.models.EvolutionaryModels().available_models):
+		tables = seda.models.EvolutionaryModels(model).available_tables
+		if not tables:
+			continue
+		catalog.append((model, tables[0]))
+
+	return catalog
+
+def load_evolutionary_table_catalog():
+	"""Return list of (model, filename) for every bundled evolutionary table."""
+
+	catalog = []
+	for model in sorted(seda.models.EvolutionaryModels().available_models):
+		for filename in seda.models.EvolutionaryModels(model).available_tables:
+			catalog.append((model, filename))
+
+	return catalog

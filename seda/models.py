@@ -176,6 +176,198 @@ class Models:
 		return attrs
 
 ##########################
+class EvolutionaryModels:
+	'''
+	Description:
+	------------
+		See available evolutionary models and get basic parameters from a desired grid.
+
+	Parameters:
+	-----------
+	- model : str, optional
+		Evolutionary models. If provided, the model metadata from its ``config.json``
+		(e.g. ``ref``, ``bibcode``, ``ADS``, ``download``, ``columns``, ``units``) is
+		assigned as attributes. If omitted, only ``available_models`` is set.
+
+	Attributes:
+	-----------
+	- available_models (list) : Evolutionary models available on SEDA.
+	- available_tables (list) : Bundled table basenames for ``model`` (if provided).
+	- params (dict) : Per-table ``[min, max]`` for each grid column returned by the plugin (if provided).
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # see available evolutionary models
+	>>> seda.models.EvolutionaryModels().available_models
+	    ['ATMO2020', 'BHAC2015', 'Sonora_Bobcat', 'Sonora_Diamondback']
+	>>>
+	>>> # see the reference for a given evolutionary model
+	>>> seda.models.EvolutionaryModels('Sonora_Bobcat').ref
+	    'Marley et al. (2021)'
+	>>>
+	>>> # min/max of each grid column for every bundled table
+	>>> seda.models.EvolutionaryModels('Sonora_Bobcat').params['nc+0.0_co1.0_mass']['mass']
+	    [0.0005, 0.08]
+
+
+	Author: Theo Olsen
+
+	Date: 2026-06-04
+	'''
+#basically the same as Models class, but for evolutionary models
+	def __init__(self, model=None):
+
+		# path to evolutionary model folders
+		self.path_evolution_aux = resources.files('seda.evolution_aux')
+
+		# read info from json files
+		model_configs = self._load_model_configs()
+
+		# set available evolutionary models
+		self.available_models = list(model_configs.keys())
+
+		# if a specific model is requested
+		if model:
+			if model not in model_configs:
+				raise Exception(f'Evolutionary models "{model}" are not recognized. '
+				                f'Available evolutionary models: \n          {self.available_models}')
+
+			config = model_configs[model]
+
+			# assign all non-comment fields as attributes
+			for key, value in config.items():
+				if not key.startswith('_comment'):
+					setattr(self, key, value)
+
+			self.model = model
+
+	def _load_model_configs(self):
+		"""
+		Scan evolutionary model folders, ensure config + plugin exist,
+		and return a dict with config keyed by available models.
+		"""
+
+		model_configs = {}
+
+		# loop over evolutionary model directories
+		for model_dir in self.path_evolution_aux.iterdir():
+			# skip non-directories and internal folders
+			if not model_dir.is_dir() or model_dir.name.startswith('_'):
+				continue
+
+			config_path = model_dir / 'config.json'
+			plugin_path = model_dir / 'plugin.py'
+
+			# require both config and plugin files
+			if not config_path.exists() or not plugin_path.exists():
+				continue
+
+			# read model name from config
+			with open(config_path) as f:
+				config = json.load(f)
+
+			model_name = config['model']
+			model_configs[model_name] = config
+
+		return model_configs
+
+	@property
+	def available_tables(self):
+		"""Basenames of evolutionary table files bundled for this model."""
+		if not hasattr(self, 'model'):
+			raise Exception('Pass a model name to EvolutionaryModels to list available tables.')
+		return _list_evolutionary_tables(self.model)
+
+	@property
+	def params(self):
+		"""Per-table min/max for each grid column in native units (see ``config.json`` ``units``)."""
+		if not hasattr(self, 'model'):
+			raise Exception('Pass a model name to EvolutionaryModels to read parameter ranges.')
+		if not hasattr(self, '_params_cache'):
+			self._params_cache = _compute_evolutionary_param_ranges(self.model)
+		return self._params_cache
+
+##########################
+def _list_evolutionary_tables(model):
+	'''
+	Return sorted basenames of evolutionary table files in ``evolution_aux/<model>/``.
+	'''
+
+	if model not in EvolutionaryModels().available_models:
+		raise Exception(f'Evolutionary models "{model}" are not recognized. '
+		                f'Available evolutionary models: \n          {EvolutionaryModels().available_models}')
+
+	config, _ = _load_evolutionary_model(model)
+	pattern = config.get('filename_pattern', '*')
+	model_dir = _EVOL_BASE_PATH / model
+	skip = {'config.json', 'plugin.py'}
+
+	tables = sorted(
+		f.name for f in model_dir.iterdir()
+		if f.is_file() and f.name not in skip and fnmatch.fnmatch(f.name, pattern)
+	)
+	return tables
+
+##########################
+def resolve_evolutionary_table(model, filename=None):
+	'''
+	Description:
+	------------
+		Resolve the basename of a bundled evolutionary table for ``model``.
+
+	Parameters:
+	-----------
+	- model : str
+		Evolutionary models. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+	- filename : str, optional
+		Basename of a table file inside ``evolution_aux/<model>/``.
+		If omitted and exactly one table exists, it is selected automatically.
+		If omitted and multiple tables exist, available basenames are printed
+		and a ``ValueError`` is raised.
+
+	Returns:
+	--------
+	- str
+		Basename of the selected evolutionary table file.
+
+	Author: Theo Olsen
+
+	Date: 06/04/2026
+	'''
+
+	tables = _list_evolutionary_tables(model)
+
+	if not tables:
+		raise FileNotFoundError(
+			f'No evolutionary table files found for "{model}" in evolution_aux/{model}/.'
+		)
+
+	if filename is None:   #automatically return only avaialble table
+		if len(tables) == 1:
+			return tables[0]
+		print(f'Available evolutionary tables for "{model}":')
+		for name in tables:
+			print(f'  - {name}')
+		raise ValueError(
+			f'Multiple evolutionary tables are available for "{model}". '
+			f'Pass filename=<basename> to select one.'
+		)
+
+	if filename not in tables:
+		print(f'Available evolutionary tables for "{model}":')
+		for name in tables:
+			print(f'  - {name}')
+		raise ValueError(
+			f'filename={filename!r} is not recognized for "{model}". '
+			f'Choose one of the available table basenames listed above.'
+		)
+
+	return filename
+
+##########################
 def separate_params(model, spectra_name, save_results=False, out_file=None):
 	'''
 	Description:
@@ -387,6 +579,79 @@ def read_PT_profile(filename, model):
 	return out
 
 ##########################
+def read_evolutionary_model(filename, model):
+	'''
+	Description:
+	------------
+		Read an evolutionary model table and return its grid arrays.
+
+	Parameters:
+	-----------
+	- filename : str
+		Basename of an evolutionary table file inside ``evolution_aux/<model>/``.
+		Pass ``None`` to auto-select when only one table is bundled.
+	- model : str
+		Evolutionary models. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+
+	Returns:
+	--------
+	Dictionary with evolutionary grid columns parsed by the model plugin.
+	Each model defines its own columns; all tables must provide ``logL`` and
+	``radius`` for interpolation. See ``config.json`` ``units`` for column units.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> model = 'Sonora_Bobcat'
+	>>> filename = 'nc+0.0_co1.0_mass'
+	>>>
+	>>> out = seda.read_evolutionary_model(filename=filename, model=model)
+	>>> mass = out['mass']
+
+	Author: Theo Olsen
+
+	Date: 2026-06-04
+	'''
+	if model not in EvolutionaryModels().available_models:
+		raise Exception(f'Evolutionary models "{model}" are not recognized. '
+		                f'Available evolutionary models: \n          {EvolutionaryModels().available_models}')
+
+	basename = resolve_evolutionary_table(model, filename)
+
+	_, plugin = _load_evolutionary_model(model)
+	out = plugin._read_evolutionary_model(basename)
+
+	for key in ('logL', 'radius'):
+		if key not in out:
+			raise ValueError(
+				f'{model}/plugin.py must return "{key}" in the grid dictionary '
+				f'for evolutionary interpolation.'
+			)
+
+	return out
+
+##########################
+def _param_ranges_from_grid(grid):
+	"""Return ``{column: [min, max]}`` for each array in an evolutionary grid dict."""
+
+	return {
+		col: [float(np.min(grid[col])), float(np.max(grid[col]))]
+		for col in grid
+	}
+
+##########################
+def _compute_evolutionary_param_ranges(model):
+	"""Min/max of every grid column for each bundled evolutionary table."""
+
+	ranges = {}
+	for filename in _list_evolutionary_tables(model):
+		grid = read_evolutionary_model(filename=filename, model=model)
+		ranges[filename] = _param_ranges_from_grid(grid)
+	return ranges
+
+##########################
 # short name for plot legends for model spectra
 def spectra_name_short(model, spectra_name):
 
@@ -452,6 +717,53 @@ def _load_model(model):
 
 	# cache and return
 	_PLUGIN_CACHE[model] = (config, plugin)
+	return config, plugin
+
+##########################
+_EVOL_BASE_PATH = Path(__file__).parent / 'evolution_aux'
+_EVOL_PLUGIN_CACHE = {}
+
+def _load_evolutionary_model(model):
+
+	# return cached model if already loaded
+	if model in _EVOL_PLUGIN_CACHE:
+		return _EVOL_PLUGIN_CACHE[model]
+
+	# define model folder and load JSON config
+	model_dir = _EVOL_BASE_PATH / model
+	config_path = model_dir / 'config.json'
+
+	# verify the json file exists
+	if not config_path.exists():
+		raise FileNotFoundError(f"No config.json for evolutionary model '{model}'")
+
+	with open(config_path) as f:
+		config = json.load(f)
+
+	# load plugin.py dynamically as a module
+	plugin_path = model_dir / 'plugin.py'
+	# verify that plugin.py exists
+	if not plugin_path.exists():
+		raise NotImplementedError(
+			f"Evolutionary model '{model}' has no plugin.py"
+		)
+
+	# create a module spec for the plugin file
+	spec = importlib.util.spec_from_file_location(f'{model}_evolution', plugin_path)
+	# create a module object from that spec
+	plugin = importlib.util.module_from_spec(spec)
+	# execute the module code to load it into Python
+	spec.loader.exec_module(plugin)
+
+	# validate required functions in model folder
+	for func in ['_read_evolutionary_model', '_convert_inputs']:
+		if not hasattr(plugin, func):
+			raise AttributeError(
+				f"{model}/plugin.py (evolution_aux) must define '{func}'"
+			)
+
+	# cache and return
+	_EVOL_PLUGIN_CACHE[model] = (config, plugin)
 	return config, plugin
 
 #+++++++++++++++++++++++++++

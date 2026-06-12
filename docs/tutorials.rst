@@ -25,6 +25,15 @@ Handling Atmospheric Model Grids
    notebooks/tutorial_interpolate_model_grid.ipynb
    notebooks/tutorial_ingest_new_models.ipynb
 
+Handling Evolutionary Models
+++++++++++++++++++++++++++++++++
+
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/tutorial_evolutionary_models_examination.ipynb
+   notebooks/tutorial_ingest_evolutionary_models.ipynb
+
 Chi-square minimization
 +++++++++++++++++++++++
 

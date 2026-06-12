@@ -1,0 +1,27 @@
+{
+    "_comment_model": "Internal label for the evolutionary models",
+    "model": "Sonora_Bobcat",
+    "_comment_ref": "Reference for the models (optional)",
+    "ref": "Marley et al. (2021)",
+    "_comment_name": "Name of the models (optional)",
+    "name": "Sonora Bobcat",
+    "_comment_bibcode": "bibcode identifier for the models (optional)",
+    "bibcode": "2021ApJ...920...85M",
+    "_comment_ADS": "ADS link to the model publication (optional)",
+    "ADS": "https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract",
+    "_comment_download": "Link to download the models (optional)",
+    "download": "https://zenodo.org/records/5063476",
+    "_comment_filename_pattern": "Common pattern recognized in evolutionary table filenames",
+    "filename_pattern": "*_mass",
+    "_comment_columns": "Columns in each evolutionary table data row (logI is parsed out and ignored)",
+    "columns": ["mass", "age", "logL", "Teff", "logg", "radius", "logI"],
+    "_comment_units": "Units of the parsed grid quantities returned by read_evolutionary_model",
+    "units": {
+        "mass": "M_sun",
+        "age": "Gyr",
+        "logL": "log10(L/Lsun)",
+        "Teff": "K",
+        "logg": "cgs dex",
+        "radius": "R_sun"
+    }
+}

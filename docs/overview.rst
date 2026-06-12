@@ -47,26 +47,40 @@ Code Workflow of Forward Modeling
 
 Useful Tools
 ------------
-:math:`\texttt{SEDA}` includes several useful functions that can be used separately:
+
+:math:`\texttt{SEDA}` includes several useful functions that can be used separately.
+
+Empirical Analysis
+++++++++++++++++++
+
   - :func:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: Calculates synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see `tutorial_synthetic_photometry <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`_).
-  - :mod:`~seda.spectral_indices.spectral_indices`: Measures the depth of absorption features using literature-defined or user-defined spectral indices. It includes: 
+  - :mod:`~seda.spectral_indices.spectral_indices`: Measures the depth of absorption features using literature-defined or user-defined spectral indices. It includes:
 
     - :func:`~seda.spectral_indices.spectral_indices.silicate_index` to assess cloudiness via the 9 microns silicate absorption (`Suárez & Metchev 2022 <https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.5701S/abstract>`_, `Suárez & Metchev 2023 <https://ui.adsabs.harvard.edu/abs/2023MNRAS.523.4739S/abstract>`_).
     - :func:`~seda.spectral_indices.spectral_indices.water_index` for the 6.25 microns water absorption, :func:`~seda.spectral_indices.spectral_indices.methane_index` for the 7.65 microns methane feature, and :func:`~seda.spectral_indices.spectral_indices.ammonia_index` for the 10.5 microns ammonia feature (`Cushing et al. 2006 <https://ui.adsabs.harvard.edu/abs/2006ApJ...648..614C/abstract>`_, `Suárez & Metchev 2022 <https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.5701S/abstract>`_, `Suárez & Metchev 2023 <https://ui.adsabs.harvard.edu/abs/2023MNRAS.523.4739S/abstract>`_) (see `tutorial_spectral_indices <https://seda.readthedocs.io/en/latest/notebooks/tutorial_spectral_indices.html>`_  and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
     - Near-infrared indices designed to identify potential variable objects (`Ashraf et al. 2022 <https://ui.adsabs.harvard.edu/abs/2022ApJ...934..178A>`_, `Oliveros-Gomez et al. 2022 <https://ui.adsabs.harvard.edu/abs/2022ApJ...939...72O>`_, `Oliveros-Gomez et al. 2024 <https://ui.adsabs.harvard.edu/abs/2024ApJ...967..149O>`_).
     - :func:`~seda.spectral_indices.spectral_indices.user_index` for a user-defined spectral index, using the same approaches as the literature-defined indices described above.
-  - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
-  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_ ).
-  - :func:`~seda.utils.read_SVO_params`: Reads parameters of interest (e.g., effective wavelength, effective width, and zero point) from SVO for a list of filters.
-  - :func:`~seda.utils.convolve_spectrum`: Convolves spectra to a desired resolution at a given wavelength.
   - :func:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: Converts fluxes into magnitudes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :func:`~seda.synthetic_photometry.synthetic_photometry.mag_to_flux`: Converts magnitudes into fluxes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :func:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: Converts fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :func:`~seda.utils.spt_to_teff`: Estimates effective temperatures from spectral types using relationships in the literature.
-  - :func:`~seda.utils.teff_to_teff`: Estimates spectral type from effective temperature, using numerical inversion of :func:`~seda.utils.spt_to_teff`.
+  - :func:`~seda.utils.teff_to_spt`: Estimates spectral type from effective temperature, using numerical inversion of :func:`~seda.utils.spt_to_teff`.
   - :func:`~seda.utils.app_to_abs_flux`: Converts apparent fluxes into absolute fluxes considering a distance.
+  - :func:`~seda.utils.read_SVO_params`: Reads parameters of interest (e.g., effective wavelength, effective width, and zero point) from SVO for a list of filters.
+  - :func:`~seda.utils.convolve_spectrum`: Convolves spectra to a desired resolution at a given wavelength.
+
+
+Atmospheric and Evolutionary Models
++++++++++++++++++++++++++++++++++++
+
+  - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
   - :func:`~seda.utils.separate_params`: Extracts parameters from model spectra file names.
+  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
+  - :func:`~seda.phy_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
+  - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
+  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
+
 
 .. _models:
 
@@ -183,7 +197,7 @@ Parameter coverage:
 ATMO 2020 Models
 ++++++++++++++++
 
-Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. Download the `ATMO 2020 models <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_. The models include three grids:
+Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. SEDA uses the `ATMO_2020_neweos_update' models, available for download at <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_. The models include three grids:
   
   - ATMO2020_CEQ: cloudless models with equilibrium chemistry.
   - ATMO2020_NEQ_weak: cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
@@ -226,3 +240,124 @@ Parameter coverage:
   - logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
   - fsed = 1, 2, 3, 4
   - R = [100000, 700000] (the resolving power varies with wavelength)
+
+.. _evolutionary_models:
+
+Available Evolutionary Models
+-----------------------------
+
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
+
+Sonora Bobcat Evolutionary Tables
++++++++++++++++++++++++++++++++++
+
+Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Three ``*_mass`` tables (constant-mass cooling tracks) at solar C/O are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are also available from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive).
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
+  - age = [0.001, 15] Gyr
+  - Lbol = [6.1e-10, 2.2e-3] Lsun (log L/Lsun = [-9.21, -2.66])
+  - R = [0.75, 2.59] Rjup
+  - logg = [2.65, 5.48] (g in cgs)
+  - Teff = [91, 2537] K
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex
+  - C/O = 1.0 (solar)
+
+Bundled tables (pass as ``filename`` basename):
+
+.. code-block:: console
+
+  - ``nc-0.5_co1.0_mass``  ([M/H] = -0.5)
+  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
+  - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
+
+Sonora Diamondback Evolutionary Tables
+++++++++++++++++++++++++++++++++++++++
+
+Evolutionary tables accompanying the cloudy atmospheric models by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...975...59M/abstract>`_. Nine ``*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for three cloud treatments (``nc``, ``hybrid_f2``, and ``hybrid-grav_f2``) at [M/H] = -0.5, 0.0, and 0.5. The original tables are also available from the `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
+  - age = [0.002, 13] Gyr
+  - Lbol = [1.6e-8, 3.7e-3] Lsun (log L/Lsun = [-7.81, -2.43])
+  - R = [0.76, 2.5] Rjup
+  - logg = [2.57, 5.51] (g in cgs)
+  - Teff = [200, 2500] K
+  - Cloud treatment = ``nc``, ``hybrid_f2``, or ``hybrid-grav_f2`` 
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex 
+
+Bundled tables (pass as ``filename`` basename):
+
+.. code-block:: console
+
+  - ``nc_m-0.5_mass``, ``nc_m0.0_mass``, ``nc_m+0.5_mass``  (cloudless; [M/H] = -0.5, 0.0, +0.5)
+  - ``hybrid_f2_m-0.5_mass``, ``hybrid_f2_m0.0_mass``, ``hybrid_f2_m+0.5_mass``  (hybrid clouds, f\ :sub:`sed`\ = 2)
+  - ``hybrid-grav_f2_m-0.5_mass``, ``hybrid-grav_f2_m0.0_mass``, ``hybrid-grav_f2_m+0.5_mass``  (hybrid-grav clouds, f\ :sub:`sed`\ = 2)
+
+For more information on these filenames, please refer to the 'Evolution' section at `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
+
+ATMO 2020 Evolutionary Tables
++++++++++++++++++++++++++++++
+
+Evolutionary tables accompanying the cloudless atmospheric models by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. Three ``*_mass.txt`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for equilibrium chemistry (CEQ) and non-equilibrium chemistry with weak (logKzz = 4) and strong (logKzz = 6) vertical mixing. The original tables are also available from the `ATMO 2020 models <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [1.05, 79] Mjup (0.001 to 0.075 Msun)
+  - age = [0.001, 10] Gyr
+  - Lbol = [1.8e-8, 5.4e-2] Lsun (log L/Lsun = [-7.74, -1.27])
+  - R = [0.74, 7.7] Rjup
+  - logg = [3.0, 5.5] (g in cgs)
+  - Teff = [207, 3160] K
+  - Chemistry = CEQ, NEQ_weak (logKzz = 4), or NEQ_strong (logKzz = 6) 
+
+Bundled tables (pass as ``filename`` basename):
+
+.. code-block:: console
+
+  - ``ATMO_CEQ_mass.txt``  (equilibrium chemistry)
+  - ``ATMO_NEQ_weak_mass.txt``  (non-equilibrium chemistry due to weak vertical mixing; logKzz = 4)
+  - ``ATMO_NEQ_strong_mass.txt``  (non-equilibrium chemistry due to strong vertical mixing; logKzz = 6)
+
+BHAC15 Evolutionary Tables
+++++++++++++++++++++++++++
+
+Evolutionary tracks and internal-structure tables for brown dwarfs and low-mass stars by `Baraffe et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015A%26A...577A..42B/abstract>`_. One tracks+structure table is bundled with :math:`\texttt{SEDA}` covering 0.01 to 1.4 M\ :sub:`sun`\ . The original tables are also available from the `BHAC15 models <https://perso.ens-lyon.fr/isabelle.baraffe/BHAC15dir/>`_.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.01, 1.4] Msun
+  - age = [5.69, 10.0] log10(yr) (~0.0005 to 10 Gyr)
+  - Lbol = [1.9e-5, 5.5] Lsun (log L/Lsun = [-4.72, 0.74])
+  - R = [0.84, 35.2] Rjup (0.086 to 3.62 Rsun)
+  - logg = [3.22, 5.39] (g in cgs)
+  - Teff = [1206, 6768] K
+  - log(Li/Li0) = [-11.2, 0.0] (ratio of surface lithium abundance to initial lithium abundance)
+  - log Tc = [5.42, 7.40] (log10 K) (central temperature)
+  - log rho_c = [-0.61, 2.88] (log10 g/cm^3) (central density)
+  - Mrad = [0.0, 1.4] Msun (radiative core mass)
+  - Rrad = [0.0, 1.75] Rsun (radiative core radius)
+  - k2conv = [0.0012, 0.49] (convective gyration radius)
+  - k2rad = [0.0, 0.31] (radiative gyration radius)
+
+Bundled table (``filename`` may be omitted):
+
+.. code-block:: console
+
+  - ``BHAC15_tracks+structure.txt``
+
+:func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
+If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
+are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
+age in Gyr for Sonora/ATMO or log10(yr) for BHAC15, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
+

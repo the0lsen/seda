@@ -1,7 +1,8 @@
 import numpy as np
 import pickle
 from astropy import units as u
-from astropy.constants import L_sun, sigma_sb, R_jup
+from astropy.constants import L_sun, sigma_sb, R_jup, R_sun
+from scipy.interpolate import LinearNDInterpolator
 from .synthetic_photometry import synthetic_photometry
 from . import input_parameters
 from . import chi2_fit 
@@ -448,6 +449,195 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 		Teff_err = (Teff_val - p_lo, p_hi - Teff_val)
 
 	return Teff_val, Teff_err
+
+##########################
+def evol_params(Lbol, eLbol, R, eR, model, filename=None,
+                n_mc=10000, central="median", error="percentile", 
+                percentiles=(16, 84), verbose=True):
+	'''
+	Description:
+	------------
+		Infer fundamental parameters by interpolating evolutionary models given a 
+		bolometric luminosity and radius. Uncertainties are propagated with a 
+		Monte Carlo simulation.
+
+
+	Parameters:
+	-----------
+	- Lbol : float
+		Bolometric luminosity in units of L_sun.
+	- eLbol : float
+		Uncertainty in bolometric luminosity (L_sun).
+	- R : float
+		Radius in units of R_jup.
+	- eR : float
+		Uncertainty in radius (R_jup).
+	- model : str, required
+		Evolutionary models whose tables are used. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+	- filename : str, optional
+		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
+		If only one table is bundled, it is selected automatically.
+		If multiple tables exist, available basenames are printed.
+	- n_mc : int, optional (default 10000)
+		Number of Monte Carlo samples for uncertainties.
+	- central : str, optional (default "median")
+		"mean" or "median" for the central value.
+	- error : str, optional (default "percentile")
+		"std" or "percentile".
+	- percentiles : tuple or list, optional (default (16, 84))
+		Lower and upper percentiles for the uncertainty when ``error="percentile"``.
+	- verbose : {``True``, ``False``}, optional (default ``True``)
+		Print the inferred parameters and the number and fraction of samples outside the grid.
+
+	Returns:
+	--------
+	Dictionary with inferred grid columns and uncertainties:
+		- One key per interpolated column (e.g. ``'mass'``, ``'age'``, ``'logg'``, ``'Teff'``)
+		  in the native units defined by the model ``config.json``.
+		- Matching uncertainty keys prefixed with ``e`` (e.g. ``'emass'``, ``'eage'``).
+		  Each uncertainty is a scalar if ``error="std"`` or a ``(lower, upper)`` tuple if 
+		  ``error="percentile"``.
+		- ``'n_outside_grid'`` : number of Monte Carlo samples outside the grid coverage.
+		- ``'frac_outside_grid'`` : fraction of Monte Carlo samples outside the grid.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # input bolometric luminosity and radius with errors
+	>>> Lbol, eLbol = 6.324e-5, 6.978e-6  # in Lsun
+	>>> R, eR = 1.018, 0.059              # in Rjup
+	>>>
+	>>> # infer parameters using the bundled solar-metallicity Bobcat table
+	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR,
+	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
+	>>> out['mass'], out['age']
+	    (0.0133, 0.51)  
+
+	Author: Theo Olsen
+
+	Date: 2026-06-02
+	'''
+
+	# verify that "central" and "error" are valid strings
+	central_valid = ["mean", "median"]
+	if central not in central_valid:
+		raise ValueError(
+			f"central={central!r} is not recognized. "
+			f"Valid options: {central_valid}."
+		)
+	error_valid = ["std", "percentile"]
+	if error not in error_valid:
+		raise ValueError(
+			f"error={error!r} is not recognized. "
+			f"Valid options: {error_valid}."
+		)
+
+	if Lbol <= 0:
+		raise ValueError(f"Lbol must be positive, got {Lbol}.")
+
+	available_models = models.EvolutionaryModels().available_models
+	if model not in available_models:
+		raise ValueError(
+			f'Evolutionary model {model!r} is not recognized. '
+			f'Available evolutionary models:\n'
+			f'          {available_models}'
+		)
+
+	basename = models.resolve_evolutionary_table(model, filename) #find basename for called model (or only model if left blank)
+	grid = models.read_evolutionary_model(filename=basename, model=model)
+
+	_, plugin = models._load_evolutionary_model(model)
+	if not hasattr(plugin, '_convert_inputs'):
+		raise NotImplementedError(
+			f'Evolutionary model "{model}" has no _convert_inputs in plugin.py. '
+			f'See the tutorial on ingesting evolutionary models.'
+		)
+	converted = plugin._convert_inputs(Lbol, eLbol, R, eR)
+
+	interp_axes = ('logL', 'radius')
+	for axis in interp_axes:
+		e_axis = f'e_{axis}'
+		if axis not in converted or e_axis not in converted:
+			raise ValueError(
+				f'{model}/plugin.py _convert_inputs must return {axis!r} and {e_axis!r} '
+				f'for Monte Carlo sampling on the grid interpolation axes.'
+			)
+
+	grid_logL = np.asarray(grid['logL'], dtype=float)
+	grid_R    = np.asarray(grid['radius'], dtype=float)
+	points = np.column_stack((grid_logL, grid_R))
+
+	# Monte Carlo simulation on grid interpolation axes (units set by plugin)
+	logL_samples = np.random.normal(converted['logL'], converted['e_logL'], n_mc)
+	R_samples    = np.random.normal(converted['radius'], converted['e_radius'], n_mc)
+
+	xi = np.column_stack((logL_samples, R_samples))
+
+	# helper function to summarize a set of MC samples into a central value and an uncertainty
+	def _summarize(samples):
+		good = samples[~np.isnan(samples)]
+		if central == "mean":
+			val = np.mean(good)
+		else: # median
+			val = np.median(good)
+		if error == "std":
+			err = np.std(good)
+		else: # percentile
+			p_lo, p_hi = np.percentile(good, percentiles)
+			err = (val - p_lo, p_hi - val)
+		return val, err
+
+	out = {}  # final inferred parameters and uncertainties
+	first_samples = None  # MC samples from first column, used to count out-of-grid points
+	param_samples = {}  # MC samples for every interpolated grid column
+	for param, grid_values in grid.items():  # loop over each quantity stored in the table
+		if param in ('logL', 'radius'):  # skip axes already used to build xi
+			continue
+		interp = LinearNDInterpolator(points, np.asarray(grid_values, dtype=float))  # 2D interpolator for this column
+		samples = interp(xi)  # infer this parameter at each MC (logL, R) draw
+		param_samples[param] = samples  # store samples for later summarization
+		if first_samples is None:  # remember first column only once
+			first_samples = samples  # NaN mask is the same for all columns at the same xi
+
+	n_outside = int(np.sum(np.isnan(first_samples)))
+	frac_outside = n_outside / n_mc
+	print(f'{n_outside}/{n_mc} ({100*frac_outside:.1f}%) Monte Carlo samples fell '
+	             'outside the evolutionary grid and were excluded from the statistics.')
+	if frac_outside > 0.5:
+		print(' More than half of the Monte Carlo samples are outside the '
+		             'grid; the inferred values are poorly constrained.')
+	if n_outside == n_mc:
+		raise ValueError('All Monte Carlo samples fell outside the evolutionary grid. '
+		                 'Check that Lbol and R are within the model coverage '
+		                 'and that the table units/column order are correct.')
+
+	for param, samples in param_samples.items():
+		val, err = _summarize(samples)
+		out[param] = val
+		out[f'e{param}'] = err
+
+	out['n_outside_grid'] = n_outside
+	out['frac_outside_grid'] = frac_outside
+
+	if verbose:
+		model_info = models.EvolutionaryModels(model)
+		units = getattr(model_info, 'units', {})
+		def _fmt_err(err):
+			if isinstance(err, tuple):
+				return '(-{:.4g}, +{:.4g})'.format(err[0], err[1])
+			return '{:.4g}'.format(err)
+		print(f'\nInferred fundamental parameters ({model_info.name}, {basename}):')
+		for param in grid:
+			if param in ('logL', 'radius'):
+				continue
+			unit = units.get(param, '')
+			unit_str = f' {unit}' if unit else ''
+			print('   {} = {:.4g} {}{}'.format(
+				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
+
+	return out
 
 ##################
 # function to sort input spectra as nested lists according to their minimum wavelength values

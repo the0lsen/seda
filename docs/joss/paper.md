@@ -32,39 +32,42 @@ authors:
   - name: Efrain Alvarado III
     orcid: 0009-0005-8159-8490
     affiliation: 7
+  - name: Theodor Olsen
+    orcid: 0009-0003-3445-5900
+    affiliation: 8
   - name: Michael K. Plummer
     orcid: 0000-0002-4831-0329
-    affiliation: 8
+    affiliation: 9
   - name: Johanna M. Vos
     orcid: 0000-0003-0489-1528
-    affiliation: 9
+    affiliation: 10
   - name: Daniella C. Bardalez Gagliuffi
     orcid: 0000-0001-8170-7072
-    affiliation: 10
+    affiliation: 11
   - name: Elena Manjavacas
     orcid: 0000-0003-0192-6887
-    affiliation: 11
+    affiliation: 12
   - name: Melanie J. Rowland
     orcid: 0000-0003-4225-6314
     affiliation: 1
   - name: Samuel Candero
     orcid: 
-    affiliation: 12, 1
+    affiliation: 13, 1
   - name: Jonathan Gagné
     orcid: 0000-0002-2592-9612
-    affiliation: 13, 14
+    affiliation: 14, 15
   - name: Thomas P. Bickle
     orcid: 0000-0003-2235-761X
-    affiliation: 15
+    affiliation: 16
   - name: Austin Rothermich
     orcid: 0000-0003-4083-9962
     affiliation: 1, 3
   - name: Madeline Lam
     orcid: 
-    affiliation: 9
+    affiliation: 10
   - name: Easton J. Honaker
     orcid: 0000-0003-1202-3683
-    affiliation: 16
+    affiliation: 17
   - name: Sherelyn Alejandro Merchan
     orcid: 0000-0003-0548-0093 
     affiliation: 1, 3
@@ -73,19 +76,19 @@ authors:
     affiliation: 1
   - name: Caprice L. Phillips
     orcid: 0000-0001-5610-5328
-    affiliation: 17
+    affiliation: 18
   - name: Sam Barber
     orcid: 
     affiliation: 5
   - name: Savaria Parrish
     orcid: 
-    affiliation: 18
+    affiliation: 19
   - name: Jolie L'Heureux
     orcid: 0009-0009-3024-5846
     affiliation: 1, 3
   - name: Azul Ruiz Diaz
     orcid: 0000-0001-6733-4118
-    affiliation: 19, 20
+    affiliation: 20, 21
 
 affiliations:
   - name: Department of Astrophysics, American Museum of Natural History, Central Park West at 79th Street, NY 10024, USA
@@ -102,32 +105,34 @@ affiliations:
     index: 6
   - name: Department of Physics and Astronomy, San Francisco State University, 1600 Holloway Avenue, San Francisco, CA 94132, US
     index: 7
-  - name: Department of Physics and Meteorology, United States Air Force Academy, 2354 Fairchild Drive, CO 80840, USA
+  - name: Department of Physics and Astronomy, Vassar College, 124 Raymond Avenue, Poughkeepsie, NY 12604, US
     index: 8
-  - name: School of Physics, Trinity College Dublin, The University of Dublin, Dublin 2, Ireland  
+  - name: Department of Physics and Meteorology, United States Air Force Academy, 2354 Fairchild Drive, CO 80840, USA
     index: 9
-  - name: Department of Physics & Astronomy, Amherst College, Amherst, MA, USA  
+  - name: School of Physics, Trinity College Dublin, The University of Dublin, Dublin 2, Ireland  
     index: 10
-  - name: AURA for the European Space Agency (ESA), ESA Office, Space Telescope Science Institute, 3700 San Martin Drive, Baltimore, MD 21218, USA
+  - name: Department of Physics & Astronomy, Amherst College, Amherst, MA, USA  
     index: 11
-  - name: Department of Physics, Florida Atlantic University, 777 Glades Rd, Boca Raton, FL 33431, USA
+  - name: AURA for the European Space Agency (ESA), ESA Office, Space Telescope Science Institute, 3700 San Martin Drive, Baltimore, MD 21218, USA
     index: 12
-  - name: Planétarium de Montréal, Espace pour la Vie, 4801 Avenue Pierre-de Coubertin, Montréal, Québec, Canada  
+  - name: Department of Physics, Florida Atlantic University, 777 Glades Rd, Boca Raton, FL 33431, USA
     index: 13
-  - name: Trottier Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
+  - name: Planétarium de Montréal, Espace pour la Vie, 4801 Avenue Pierre-de Coubertin, Montréal, Québec, Canada  
     index: 14
-  - name: School of Physical Sciences, The Open University, Milton Keynes, MK7 6AA, UK  
+  - name: Trottier Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
     index: 15
+  - name: School of Physical Sciences, The Open University, Milton Keynes, MK7 6AA, UK  
+    index: 16
   - name: Department of Physics and Astronomy, University of Delaware, Newark, DE 19716, USA  
-    index: 16 
-  - name: Department of Astronomy & Astrophysics, University of California, Santa Cruz, CA 95064, USA  
     index: 17
-  - name: Department of Geosciences, Virginia Tech, Blacksburg, VA 24061, USA
+  - name: Department of Astronomy & Astrophysics, University of California, Santa Cruz, CA 95064, USA  
     index: 18
-  - name: Planétarium Rio Tinto Alcan, Espace pour la Vie, 4801 av. Pierre-de Coubertin, Montréal, Québec, Canada  
+  - name: Department of Geosciences, Virginia Tech, Blacksburg, VA 24061, USA
     index: 19
-  - name: Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
+  - name: Planétarium Rio Tinto Alcan, Espace pour la Vie, 4801 av. Pierre-de Coubertin, Montréal, Québec, Canada  
     index: 20
+  - name: Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
+    index: 21
 
 date: 11 February 2026
 bibliography: paper.bib
@@ -226,9 +231,10 @@ equilibrium and non-equilibrium chemistry;
 metallicities from very low ($-2.4$ dex) to super-solar ($+0.5$ dex);
 temperatures from the coldest brown dwarfs through hot and temperate exoplanets to low-mass stars ($\sim$ 300--4200 K);
 and surface gravities ($\log g$=3.0--5.5) appropriate for both young and old ultracool objects.
-`SEDA` also allows users to easily incorporate additional atmospheric model grids.
-Fitting these model grids to observational data, the code infers chemical and physical parameters defined as free parameters in the grids, 
-along with additional quantities such as bolometric luminosity and radius, when the distance is known (see [Mathematics](#mathematics)).
+`SEDA` also allows users to easily incorporate additional atmospheric model grids, as well as evolutionary models.
+Fitting these atmospheric model grids to observational data, the code infers chemical and physical parameters defined as free parameters in the grids, 
+along with additional quantities such as bolometric luminosity and radius, when the distance is known (see [Mathematics](#mathematics)). Additional fundamental parameters, including mass, age, surface gravity, and effective temperature, can be derived using evolutionary models from the model families described above, as well as BHAC15 [@Baraffe_etal2015].
+
 
 Empirical analyses of SEDs include measurements of the strengths of key spectral features produced by gas and grain species using literature-defined or user-defined spectral indices, i.e., flux ratios that quantify the depth of specific spectral signatures. 
 These indices are applied to mid-infrared features [e.g., @Cushing_etal2006; @Suarez_Metchev2022; @Suarez_Metchev2023], as well as to near-infrared diagnostics designed to identify potential variable objects [e.g., @Ashraf_etal2022; @Oliveros-Gomez_etal2022; @Oliveros-Gomez_etal2024]. 
@@ -281,7 +287,8 @@ $(R/d)^2$ if distance is known,
 or the factor that maximizes $\ln \mathcal{L}$, which is the same that minimizes $\chi_r^2$ (\autoref{eq:alpha_chi2_r}).
 
 The scaling factor $\alpha$ is used to derive the radius from the equation above, independently of evolutionary models, provided that the distance is known. 
-The observed data are complemented with the best-fitting model to construct a full hybrid SED, which is then integrated to determine the bolometric luminosity, if the distance is available.
+The observed data are complemented with the best-fitting model to construct a full hybrid SED, which is then integrated to determine the bolometric luminosity, if the distance is available. 
+The radius and bolometric luminosity are used to estimate the effective temperature via the Stefan-Boltzmann law and can also be interpolated within evolutionary models to derive additional parameters, including mass, surface gravity, and age.
 
 # Documentation
 `SEDA` is hosted on GitHub[^2] and the most up-to-date documentation is available on Read The Docs[^3].
@@ -306,9 +313,8 @@ In this work, we substantially expand upon that initial framework and release a 
 
 # Future Developments
 Among several planned additions that will further increase the functionality of the code, future releases will 
-$(i)$ enable measurements of projected rotational velocity ($v\sin i$) and radial velocity (RV) by incorporating rotational broadening and Doppler shifting into atmospheric model spectra, as well as inference of viewing geometry based on $v\sin i$, rotation period, and radius constraints [e.g., @Vos_etal2017], 
-$(ii)$ derive physical parameters such as mass, age, surface gravity, and temperature by combining atmospheric model-fitting results with evolutionary models [e.g., @Suarez_etal2021a], and 
-$(iii)$ implement cross-correlation analyses to identify molecular species in medium- to high-resolution spectroscopic observations [e.g., @Petit_dit_de_la_Roche_etal2018].
+$(i)$ enable measurements of projected rotational velocity ($v\sin i$) and radial velocity (RV) by incorporating rotational broadening and Doppler shifting into atmospheric model spectra, as well as inference of viewing geometry based on $v\sin i$, rotation period, and radius constraints [e.g., @Vos_etal2017], and 
+$(ii)$ implement cross-correlation analyses to identify molecular species in medium- to high-resolution spectroscopic observations [e.g., @Petit_dit_de_la_Roche_etal2018].
 
 We welcome feedback, suggestions, and contributions from the community to help improve `SEDA` in future releases.
 
