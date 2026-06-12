@@ -499,7 +499,7 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
  
     Notes:
     ------
-    - MC samples that yield |sin i| > 1 are unphysical (they arise when
+    - MC samples that yield (sin i) > 1 are unphysical (they arise when
       noise pushes vsini above the true equatorial velocity). These samples
       are discarded, and the number of rejected samples is reported when
       non-zero. A large rejection fraction indicates the inputs are only
