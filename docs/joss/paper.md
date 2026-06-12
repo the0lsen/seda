@@ -233,7 +233,7 @@ temperatures from the coldest brown dwarfs through hot and temperate exoplanets 
 and surface gravities ($\log g$=3.0--5.5) appropriate for both young and old ultracool objects.
 `SEDA` also allows users to easily incorporate additional atmospheric model grids, as well as evolutionary models.
 Fitting these atmospheric model grids to observational data, the code infers chemical and physical parameters defined as free parameters in the grids, 
-along with additional quantities such as bolometric luminosity and radius, when the distance is known (see [Mathematics](#mathematics)). Additional fundamental parameters, including mass, age, surface gravity, and effective temperature, can be derived using evolutionary models from the model families described above.
+along with additional quantities such as bolometric luminosity and radius, when the distance is known (see [Mathematics](#mathematics)). Additional fundamental parameters, including mass, age, surface gravity, and effective temperature, can be derived using evolutionary models from the model families described above, as well as BHAC15 [@Baraffe_etal2015].
 
 
 Empirical analyses of SEDs include measurements of the strengths of key spectral features produced by gas and grain species using literature-defined or user-defined spectral indices, i.e., flux ratios that quantify the depth of specific spectral signatures. 
