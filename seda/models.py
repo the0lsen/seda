@@ -201,7 +201,7 @@ class EvolutionaryModels:
 	>>>
 	>>> # see available evolutionary models
 	>>> seda.models.EvolutionaryModels().available_models
-	    ['ATMO2020', 'Sonora_Bobcat', 'Sonora_Diamondback']
+	    ['ATMO2020', 'BHAC2015', 'Sonora_Bobcat', 'Sonora_Diamondback']
 	>>>
 	>>> # see the reference for a given evolutionary model
 	>>> seda.models.EvolutionaryModels('Sonora_Bobcat').ref

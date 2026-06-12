@@ -95,7 +95,7 @@ def test_evol_params_round_trip(model, filename):
 		f"Expected mass ~{mass_msun_exp} M_sun, got {out['mass']}"
 	)
 	assert out['age'] == pytest.approx(age_exp, rel=0.05), (
-		f"Expected age ~{age_exp} Gyr, got {out['age']}"
+		f"Expected age ~{age_exp}, got {out['age']}"
 	)
 	assert out['logg'] == pytest.approx(logg_exp, rel=0.05), (
 		f"Expected logg ~{logg_exp}, got {out['logg']}"
@@ -300,6 +300,10 @@ def test_list_evolutionary_tables():
 	assert 'ATMO_CEQ_mass.txt' in atmo_tables
 	assert len(atmo_tables) == 3
 
+	bhac_tables = seda.models.EvolutionaryModels('BHAC2015').available_tables
+	assert 'BHAC15_tracks+structure.txt' in bhac_tables
+	assert len(bhac_tables) == 1
+
 def test_evolutionary_models_params_requires_model():
 	"""params should require a model name, like available_tables."""
 	with pytest.raises(Exception, match='Pass a model name'):
@@ -341,3 +345,21 @@ def test_evolutionary_models_params_atmo_spot_check():
 	assert params['Teff'] == pytest.approx([206.71029843, 3156.67625353])
 	assert params['logg'] == pytest.approx([3.01108287, 5.51013179])
 	assert params['radius'] == pytest.approx([0.07585432, 0.79547701])
+
+def test_evolutionary_models_params_bhac_spot_check():
+	"""Spot-check known coverage for the BHAC15 tracks+structure table."""
+	params = seda.models.EvolutionaryModels('BHAC2015').params['BHAC15_tracks+structure.txt']
+
+	assert params['mass'] == [0.01, 1.4]
+	assert params['age'] == pytest.approx([5.68945, 10.000343])
+	assert params['logL'] == pytest.approx([-4.716, 0.74])
+	assert params['Teff'] == [1206.0, 6768.0]
+	assert params['logg'] == pytest.approx([3.224, 5.391])
+	assert params['radius'] == pytest.approx([0.086, 3.621])
+	assert params['logLi'] == pytest.approx([-11.1759, 0.0])
+	assert params['logTc'] == pytest.approx([5.417, 7.398])
+	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806])
+	assert params['Mrad'] == pytest.approx([0.0, 1.4])
+	assert params['Rrad'] == pytest.approx([0.0, 1.745])
+	assert params['k2conv'] == pytest.approx([0.00124, 0.4944])
+	assert params['k2rad'] == pytest.approx([0.0, 0.3072])

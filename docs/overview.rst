@@ -327,8 +327,37 @@ Bundled tables (pass as ``filename`` basename):
   - ``ATMO_NEQ_weak_mass.txt``  (non-equilibrium chemistry due to weak vertical mixing; logKzz = 4)
   - ``ATMO_NEQ_strong_mass.txt``  (non-equilibrium chemistry due to strong vertical mixing; logKzz = 6)
 
+BHAC15 Evolutionary Tables
+++++++++++++++++++++++++++
+
+Evolutionary tracks and internal-structure tables for brown dwarfs and low-mass stars by `Baraffe et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015A%26A...577A..42B/abstract>`_. One tracks+structure table is bundled with :math:`\texttt{SEDA}` covering 0.01 to 1.4 M\ :sub:`sun`\ . The original tables are also available from the `BHAC15 models <https://perso.ens-lyon.fr/isabelle.baraffe/BHAC15dir/>`_.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.01, 1.4] Msun
+  - age = [5.69, 10.0] log10(yr) (~0.0005 to 10 Gyr)
+  - Lbol = [1.9e-5, 5.5] Lsun (log L/Lsun = [-4.72, 0.74])
+  - R = [0.84, 35.2] Rjup (0.086 to 3.62 Rsun)
+  - logg = [3.22, 5.39] (g in cgs)
+  - Teff = [1206, 6768] K
+  - log(Li/Li0) = [-11.2, 0.0] (ratio of surface lithium abundance to initial lithium abundance)
+  - log Tc = [5.42, 7.40] (log10 K) (central temperature)
+  - log rho_c = [-0.61, 2.88] (log10 g/cm^3) (central density)
+  - Mrad = [0.0, 1.4] Msun (radiative core mass)
+  - Rrad = [0.0, 1.75] Rsun (radiative core radius)
+  - k2conv = [0.0012, 0.49] (convective gyration radius)
+  - k2rad = [0.0, 0.31] (radiative gyration radius)
+
+Bundled table (``filename`` may be omitted):
+
+.. code-block:: console
+
+  - ``BHAC15_tracks+structure.txt``
+
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
 If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
 are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
-age in Gyr, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
+age in Gyr for Sonora/ATMO or log10(yr) for BHAC15, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
 
