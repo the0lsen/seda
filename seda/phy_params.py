@@ -499,12 +499,11 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
  
     Notes:
     ------
-    - MC samples that yield (sin i) > 1 are unphysical (they arise when
-      noise pushes vsini above the true equatorial velocity). These samples
-      are discarded, and the number of rejected samples is reported when
-      non-zero. A large rejection fraction indicates the inputs are only
-      marginally consistent with the formula and the result should be
-      treated with caution.
+    - MC samples with sin i > 1 are unphysical (vsini exceeds v_eq for those
+      draws). Following Vos et al. (2017), these are set to sin i = 1 (i = 90 deg)
+      rather than discarded. The number of clipped samples is reported.
+    - Samples with NaN (e.g. from non-physical period draws) are excluded from
+      the statistics; the number of samples estimated vs used is printed.
     - The inclination posterior is bounded at 90 deg (sin i <= 1), so
       error="percentile" is strongly preferred over "std" when vsini is
       close to 2*pi*R/P.
@@ -570,31 +569,32 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
  
     # sin i for each sample
     sin_i_samples = (vsini_samples / v_eq_samples).value
- 
-    # reject unphysical samples (|sin i| > 1)
-    mask_physical = np.abs(sin_i_samples) <= 1.0
-    n_rejected = np.sum(~mask_physical)
-    if n_rejected > 0:
+
+    # Vos et al. (2017): set unphysical sin i > 1 to 1 instead of discarding
+    n_clipped = int(np.sum(sin_i_samples > 1.0))
+    sin_i_used = np.where(sin_i_samples > 1.0, 1.0, sin_i_samples)
+
+    mask_valid = ~np.isnan(sin_i_used)
+    n_nan = int(np.sum(~mask_valid))
+    n_used = int(np.sum(mask_valid))
+
+    if n_clipped > 0:
         print(
-            f"{n_rejected}/{n_mc} MC samples rejected: "
-            f"|sin i| > 1 (vsini exceeds v_eq for those draws). "
-            f"Check that your inputs are consistent with the formula."
+            f"{n_clipped}/{n_mc} MC samples had sin i > 1 and were set to sin i = 1 "
+            f"(Vos et al. 2017)."
         )
- 
-    sin_i_valid = sin_i_samples[mask_physical]
- 
-    # also remove any NaN values (e.g. from P_samples ~ 0)
-    mask_nonan = ~np.isnan(sin_i_valid)
-    if not all(mask_nonan):
-        print(f"{np.sum(~mask_nonan)} additional NaN samples discarded.")
-    sin_i_valid = sin_i_valid[mask_nonan]
+    if n_nan > 0:
+        print(f"{n_nan}/{n_mc} MC samples were NaN and excluded from statistics.")
+    print(f"{n_used}/{n_mc} MC samples used for inclination statistics.")
+
+    sin_i_valid = sin_i_used[mask_valid]
 
     # inclination in degrees
     inc_samples = np.degrees(np.arcsin(sin_i_valid))
 
     if inc_samples.size == 0:
         raise ValueError(
-            'All Monte Carlo samples were rejected (|sin i| > 1 or NaN). '
+            'All Monte Carlo samples were NaN. '
             'Check that vsini, P, and R are mutually consistent.'
         )
 

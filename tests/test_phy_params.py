@@ -471,8 +471,8 @@ def test_inclination_face_on():
 	)
 	assert inc == pytest.approx(0.0, abs=0.5)
 
-def test_inclination_reports_rejected_samples(capsys):
-	"""Unphysical draws with |sin i| > 1 should be reported and discarded."""
+def test_inclination_reports_clipped_samples(capsys):
+	"""Unphysical draws with sin i > 1 should be clipped to 1 and reported."""
 	P, R = 10.0, 0.5
 	v_eq = (2 * np.pi * R * R_jup / (P * u.hour)).to(u.km / u.s).value
 	vsini = 0.95 * v_eq
@@ -486,18 +486,22 @@ def test_inclination_reports_rejected_samples(capsys):
 		n_mc=1000,
 	)
 	captured = capsys.readouterr()
-	assert 'MC samples rejected' in captured.out
-	assert 0.0 < inc < 90.0
+	assert 'sin i > 1' in captured.out
+	assert 'set to sin i = 1' in captured.out
+	assert 'MC samples used for inclination statistics' in captured.out
+	assert 0.0 < inc <= 90.0
 	assert len(einc) == 2
 
-def test_inclination_all_samples_rejected_raises(capsys):
-	"""When every draw is unphysical, inclination should raise."""
-	with pytest.raises(ValueError, match='All Monte Carlo samples were rejected'):
-		seda.phy_params.inclination(
-			vsini=100.0, evsini=5.0,
-			P=10.0, eP=0.5,
-			R=0.5, eR=0.05,
-			n_mc=1000,
-		)
+def test_inclination_all_clipped_returns_edge_on(capsys):
+	"""When every draw has sin i > 1, clipped samples give i = 90 deg."""
+	np.random.seed(0)
+	inc, einc = seda.phy_params.inclination(
+		vsini=100.0, evsini=5.0,
+		P=10.0, eP=0.5,
+		R=0.5, eR=0.05,
+		n_mc=1000,
+	)
 	captured = capsys.readouterr()
-	assert 'MC samples rejected' in captured.out
+	assert 'sin i > 1' in captured.out
+	assert '1000/1000 MC samples used' in captured.out
+	assert inc == pytest.approx(90.0, abs=0.1)
