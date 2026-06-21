@@ -64,7 +64,7 @@ Models
 .. automodule:: seda.models
     :members:
 
-Physical Parameters
+Physical and Basic Parameters
 -------------------
 .. automodule:: seda.phy_params
     :members:
