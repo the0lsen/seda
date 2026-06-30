@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from astropy.constants import R_jup, R_sun
+from astropy.constants import M_jup, M_sun, R_jup, R_sun
 
 import seda
 from tests.conftest import load_evolutionary_model_catalog, load_evolutionary_table_catalog
@@ -19,6 +19,13 @@ def _grid_radius_in_rjup(model, radius):
 	if radius_unit == 'R_jup':
 		return float(radius)
 	raise ValueError(f'Unsupported evolutionary grid radius unit: {radius_unit!r}')
+
+def _grid_radius_native(model, filename, idx=500):
+	"""Return native-grid radius for one row of a bundled evolutionary table."""
+	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
+	if idx < 0:
+		idx = len(grid['mass']) + idx
+	return float(grid['radius'][idx])
 
 def _bundled_grid_inputs(model, filename, idx=500):
 	"""Return (Lbol, R, Teff, logg, age, mass) for one row of a bundled evolutionary table."""
@@ -363,3 +370,134 @@ def test_evolutionary_models_params_bhac_spot_check():
 	assert params['Rrad'] == pytest.approx([0.0, 1.745])
 	assert params['k2conv'] == pytest.approx([0.00124, 0.4944])
 	assert params['k2rad'] == pytest.approx([0.0, 0.3072])
+
+# ----------------------------
+# Isochrone parameters
+# ----------------------------
+@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
+def test_isochrone_params_round_trip(model, filename):
+	np.random.seed(0)
+	Lbol, R_rjup, Teff_exp, logg_exp, age_exp, mass_msun_exp = _bundled_grid_inputs(
+		model, filename,
+	)
+	R_native = _grid_radius_native(model, filename)
+
+	out = seda.phy_params.isochrone_params(
+		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
+		model=model, filename=filename, n_mc=1000, verbose=False,
+	)
+
+	assert out['radius'] == pytest.approx(R_native, rel=0.05)
+	assert out['mass'] == pytest.approx(mass_msun_exp, rel=0.05)
+	assert out['logg'] == pytest.approx(logg_exp, rel=0.05)
+	if 'Teff' in out:
+		assert out['Teff'] == pytest.approx(Teff_exp, rel=0.05)
+
+@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
+def test_isochrone_params_matches_evol_params(model, filename):
+	np.random.seed(0)
+	Lbol, R_rjup, _, _, age_exp, mass_msun_exp = _bundled_grid_inputs(model, filename)
+	R_native = _grid_radius_native(model, filename)
+
+	iso = seda.phy_params.isochrone_params(
+		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
+		model=model, filename=filename, n_mc=1000, verbose=False,
+	)
+	evol = seda.phy_params.evol_params(
+		Lbol=Lbol, eLbol=1e-10 * Lbol, R=R_rjup, eR=1e-10 * R_rjup,
+		model=model, filename=filename, n_mc=1000, verbose=False,
+	)
+
+	assert iso['radius'] == pytest.approx(R_native, rel=0.05)
+	assert evol['age'] == pytest.approx(age_exp, rel=0.05)
+	assert iso['mass'] == pytest.approx(mass_msun_exp, rel=0.05)
+
+@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
+def test_isochrone_output_keys_match_evol_style(model, filename):
+	Lbol, R_rjup, _, _, age_exp, _ = _bundled_grid_inputs(model, filename)
+	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
+	interp_params = [p for p in grid if p not in ('logL', 'age')]
+
+	out = seda.phy_params.isochrone_params(
+		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
+		model=model, filename=filename, n_mc=500, verbose=False,
+	)
+
+	for param in interp_params:
+		assert param in out
+		assert f'e{param}' in out
+		assert not isinstance(out[param], tuple)
+
+def test_isochrone_eage_propagation():
+	np.random.seed(0)
+	model, filename = 'Sonora_Bobcat', BOBCAT_FILENAME
+	Lbol, _, _, _, age_exp, _ = _bundled_grid_inputs(model, filename)
+
+	out_fixed = seda.phy_params.isochrone_params(
+		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
+		model=model, filename=filename, n_mc=2000, verbose=False,
+	)
+	np.random.seed(0)
+	out_unc = seda.phy_params.isochrone_params(
+		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.05 * age_exp,
+		model=model, filename=filename, n_mc=2000, verbose=False,
+	)
+
+	assert out_unc['eradius'][0] + out_unc['eradius'][1] > out_fixed['eradius'][0] + out_fixed['eradius'][1]
+
+def test_isochrone_eage_outside_grid_excluded():
+	"""Age MC samples outside grid coverage are excluded, not clipped to the edges."""
+	np.random.seed(0)
+	model, filename = 'Sonora_Bobcat', BOBCAT_FILENAME
+	Lbol, _, _, _, age_exp, _ = _bundled_grid_inputs(model, filename)
+
+	out = seda.phy_params.isochrone_params(
+		Lbol=Lbol, eLbol=1e-10 * Lbol,
+		age=age_exp * 100, eage=age_exp * 50,
+		model=model, filename=filename, n_mc=2000, verbose=False,
+	)
+
+	assert out['n_outside_grid'] > 0
+	assert out['frac_outside_grid'] > 0.5
+
+def test_isochrone_params_zhang2021_gj570d():
+	"""Spot-check against Zhang et al. (2021) Table 6 evolutionary values for GJ 570D."""
+	# Table 6 (evolutionary column): log(L/L_sun) = -5.54 +/- 0.03;
+	# primary-star age range 1.4-5.2 Gyr (Sec. 5). Representative age 2.7 Gyr.
+	logL = -5.54
+	e_logL = 0.03
+	Lbol = 10.0 ** logL
+	eLbol = Lbol * np.log(10) * e_logL
+	age_gyr = 2.7
+
+	np.random.seed(0)
+	out = seda.phy_params.isochrone_params(
+		Lbol=Lbol, eLbol=eLbol, age=age_gyr, eage=0.0,
+		model='Sonora_Bobcat', filename=BOBCAT_FILENAME,
+		n_mc=5000, verbose=False,
+	)
+
+	mass_mjup = out['mass'] * (M_sun / M_jup).value
+	radius_rjup = _grid_radius_in_rjup('Sonora_Bobcat', out['radius'])
+
+	# Table 6 evolutionary: R = 0.89 +/- 0.05 R_Jup, Teff = 786 +/- 20 K,
+	# logg = 5.04 +/- 0.13, M = 34.6 (+7.5/-6.5) M_Jup (Sonora Bobcat).
+	assert radius_rjup == pytest.approx(0.89, abs=0.06)
+	assert out['Teff'] == pytest.approx(786, abs=25)
+	assert out['logg'] == pytest.approx(5.04, abs=0.15)
+	assert mass_mjup == pytest.approx(34.6, abs=5.0)
+
+def test_isochrone_params_missing_age_raises():
+	with pytest.raises(TypeError):
+		seda.phy_params.isochrone_params(
+			Lbol=1e-3, eLbol=1e-4, model='Sonora_Bobcat',
+			filename=BOBCAT_FILENAME, n_mc=100, verbose=False,
+		)
+
+@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
+def test_isochrone_params_outside_grid(model, filename):
+	with pytest.raises(ValueError):
+		seda.phy_params.isochrone_params(
+			Lbol=1e10, eLbol=1e8, age=1.0, eage=0.0,
+			model=model, filename=filename, n_mc=500, verbose=False,
+		)
